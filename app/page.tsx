@@ -162,11 +162,11 @@ export default function Home() {
       {/* USP Strip */}
       <section className="relative z-10 mx-auto max-w-7xl px-6 -mt-4 mb-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
+          {([
             { icon: Database, label: "Auto-sync", title: "Data tarik automatic", desc: "FB + TikTok performance setiap pagi. Tak perlu CSV import.", color: "orange" },
             { icon: Users, label: "Multi-tenant", title: "100 client, 1 dashboard", desc: "BOD/Leader/Marketer roles + client portal white-label.", color: "lime" },
             { icon: Wallet, label: "Pricing", title: "RM199/bulan flat", desc: "Tiada per-client fee. Scale 1 client atau 1,000 client.", color: "amber" },
-          ].map((u, i) => {
+          ] as const).map((u, i) => {
             const Icon = u.icon;
             const colorMap = {
               orange: { bg: "rgba(255,87,34,0.08)", border: "rgba(255,87,34,0.25)", glow: "rgba(255,87,34,0.25)", text: "var(--color-orange)" },
