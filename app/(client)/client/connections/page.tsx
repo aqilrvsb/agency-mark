@@ -89,13 +89,6 @@ export default async function ClientConnectionsPage({
             connected={connected.has("facebook")}
           />
           <PlatformCard
-            platform="facebook_insights"
-            label="Facebook Page Insights"
-            description="Organic page performance"
-            color="from-cyan-400 to-cyan-600"
-            connected={connected.has("facebook_insights")}
-          />
-          <PlatformCard
             platform="google"
             label="Google Ads"
             description="Search, Display, YouTube campaigns"
