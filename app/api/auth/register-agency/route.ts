@@ -27,11 +27,11 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient();
 
-  // 1. Create auth user
+  // 1. Create auth user (auto-confirm, no email verification needed)
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email,
     password,
-    email_confirm: false,
+    email_confirm: true,
   });
   if (authError || !authData.user) {
     return NextResponse.json({ error: authError?.message ?? "Gagal create user" }, { status: 400 });
