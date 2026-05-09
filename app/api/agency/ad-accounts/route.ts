@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   if (!brand_id || !platform || !external_account_id) {
     return NextResponse.json({ error: "brand_id, platform, external_account_id required" }, { status: 400 });
   }
-  if (!["meta", "tiktok", "meta_ads", "tiktok_ads", "meta_insights"].includes(platform)) {
+  if (!["meta", "tiktok", "meta_ads", "tiktok_ads", "meta_insights", "google_ads"].includes(platform)) {
     return NextResponse.json({ error: "Invalid platform" }, { status: 400 });
   }
 

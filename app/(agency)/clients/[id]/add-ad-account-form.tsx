@@ -9,7 +9,7 @@ import { Plus, X } from "lucide-react";
 export function AddAdAccountForm({ brandId }: { brandId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [platform, setPlatform] = useState<"meta_ads" | "tiktok_ads" | "meta_insights">("meta_ads");
+  const [platform, setPlatform] = useState<"meta_ads" | "tiktok_ads" | "meta_insights" | "google_ads">("meta_ads");
   const [externalId, setExternalId] = useState("");
   const [externalName, setExternalName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,11 +62,12 @@ export function AddAdAccountForm({ brandId }: { brandId: string }) {
         <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">Platform</label>
         <select
           value={platform}
-          onChange={(e) => setPlatform(e.target.value as "meta_ads" | "tiktok_ads" | "meta_insights")}
+          onChange={(e) => setPlatform(e.target.value as "meta_ads" | "tiktok_ads" | "meta_insights" | "google_ads")}
           className="w-full px-3 py-2 rounded-lg bg-[var(--color-bg)] border border-[var(--color-border)] text-sm"
         >
           <option value="meta_ads">Facebook Ads</option>
           <option value="meta_insights">Facebook Page Insights</option>
+          <option value="google_ads">Google Ads</option>
           <option value="tiktok_ads">TikTok Ads</option>
         </select>
       </div>

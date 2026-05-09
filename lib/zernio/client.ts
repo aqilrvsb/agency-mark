@@ -67,7 +67,7 @@ export class ZernioClient {
    */
   async getAdAnalytics(params: {
     accountId: string;
-    platform: "meta_ads" | "tiktok_ads" | "meta_insights";
+    platform: "meta_ads" | "tiktok_ads" | "meta_insights" | "google_ads";
     dateStart: string;
     dateEnd: string;
     breakdowns?: string[];

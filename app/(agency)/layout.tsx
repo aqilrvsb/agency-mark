@@ -1,6 +1,6 @@
 import { requireAgencyStaff } from "@/lib/auth/guards";
 import Link from "next/link";
-import { Sparkles, LayoutDashboard, Users, Megaphone, BarChart3, FileText, UserCog, Settings } from "lucide-react";
+import { Sparkles, LayoutDashboard, Users, Megaphone, BarChart3, FileText, UserCog, Settings, FileBarChart2, Bell, Activity } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 
 export default async function AgencyLayout({ children }: { children: React.ReactNode }) {
@@ -21,14 +21,19 @@ export default async function AgencyLayout({ children }: { children: React.React
           </Link>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           <NavItem href="/dashboard" icon={LayoutDashboard}>Overview</NavItem>
           <NavItem href="/clients" icon={Users}>Clients</NavItem>
           <NavItem href="/campaigns" icon={Megaphone}>Campaigns</NavItem>
           <NavItem href="/analytics" icon={BarChart3}>Analytics</NavItem>
+          <NavItem href="/reports" icon={FileBarChart2}>Reports</NavItem>
           <NavItem href="/invoices" icon={FileText}>Invoices</NavItem>
+          <NavItem href="/notifications" icon={Bell}>Notifications</NavItem>
           {(user.role === "bod" || user.role === "leader" || user.role === "platform_admin") && (
-            <NavItem href="/staff" icon={UserCog}>Staff</NavItem>
+            <>
+              <NavItem href="/staff" icon={UserCog}>Staff</NavItem>
+              <NavItem href="/activity" icon={Activity}>Activity Logs</NavItem>
+            </>
           )}
           <NavItem href="/settings" icon={Settings}>Settings</NavItem>
         </nav>

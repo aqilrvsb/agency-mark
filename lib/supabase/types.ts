@@ -422,6 +422,55 @@ export type Database = {
           },
         ]
       }
+      brand_notes: {
+        Row: {
+          author_id: string | null
+          body: string
+          brand_id: string
+          company_id: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          brand_id: string
+          company_id: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          brand_id?: string
+          company_id?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_notes_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_notes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brands: {
         Row: {
           assigned_client_user_id: string | null

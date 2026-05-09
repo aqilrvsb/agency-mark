@@ -2,7 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
 import { getZernio } from "./client";
 
-export type Platform = "meta_ads" | "tiktok_ads" | "meta_insights";
+export type Platform = "meta_ads" | "tiktok_ads" | "meta_insights" | "google_ads";
 
 /**
  * Sync one agency's connected ad accounts from Zernio → Supabase ad_data.
@@ -15,13 +15,13 @@ export type Platform = "meta_ads" | "tiktok_ads" | "meta_insights";
  */
 export async function syncAgency(companyId: string): Promise<{
   ok: boolean;
-  rows: { meta_ads: number; tiktok_ads: number; meta_insights: number };
+  rows: { meta_ads: number; tiktok_ads: number; meta_insights: number; google_ads: number };
   errors: string[];
 }> {
   const admin = createAdminClient();
   const zernio = getZernio();
   const errors: string[] = [];
-  const rows = { meta_ads: 0, tiktok_ads: 0, meta_insights: 0 };
+  const rows = { meta_ads: 0, tiktok_ads: 0, meta_insights: 0, google_ads: 0 };
 
   // 1. Look up brand → ad account mappings for this agency
   const { data: adAccounts } = await admin
@@ -44,12 +44,13 @@ export async function syncAgency(companyId: string): Promise<{
   // 3. Fetch + upsert per ad account
   for (const acc of adAccounts) {
     const rawPlatform = acc.platform as string;
-    if (!["meta_ads", "tiktok_ads", "meta_insights", "meta", "tiktok"].includes(rawPlatform)) continue;
+    if (!["meta_ads", "tiktok_ads", "meta_insights", "google_ads", "meta", "tiktok"].includes(rawPlatform)) continue;
 
     // Map legacy values to new
     const normalizedPlatform: Platform =
       rawPlatform === "meta" || rawPlatform === "meta_ads" ? "meta_ads"
       : rawPlatform === "tiktok" || rawPlatform === "tiktok_ads" ? "tiktok_ads"
+      : rawPlatform === "google_ads" ? "google_ads"
       : "meta_insights";
 
     try {

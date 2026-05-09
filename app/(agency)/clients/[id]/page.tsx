@@ -2,10 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAgencyStaff } from "@/lib/auth/guards";
 import { notFound } from "next/navigation";
 import { Card, CardTitle, CardDescription, CardHeader } from "@/components/ui/card";
-import { Building2, Wallet, BarChart3, Users } from "lucide-react";
+import { Building2, Wallet, BarChart3, Users, StickyNote } from "lucide-react";
 import { AddAdAccountForm } from "./add-ad-account-form";
 import { AssignClientForm } from "./assign-client-form";
 import { TopupForm } from "./topup-form";
+import { NotesSection } from "./notes-section";
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,7 +26,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
   last30.setDate(last30.getDate() - 30);
   const last30Iso = last30.toISOString().slice(0, 10);
 
-  const [{ data: adAccounts }, { data: adData }, { data: budget }, { data: topups }, { data: clientUser }] = await Promise.all([
+  const [{ data: adAccounts }, { data: adData }, { data: budget }, { data: topups }, { data: clientUser }, { data: rawNotes }] = await Promise.all([
     supabase.from("brand_ad_accounts").select("*").eq("brand_id", id),
     supabase.from("ad_data").select("platform, date_start, data").eq("brand_id", id).gte("date_start", last30Iso).order("date_start", { ascending: false }),
     supabase.from("client_budgets").select("*").eq("brand_id", id).maybeSingle(),
@@ -33,7 +34,20 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     brand.assigned_client_user_id
       ? supabase.from("users").select("email, full_name").eq("id", brand.assigned_client_user_id as string).maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase.from("brand_notes").select("id, body, created_at, author_id").eq("brand_id", id).order("created_at", { ascending: false }).limit(20),
   ]);
+
+  const noteAuthorIds = [...new Set((rawNotes ?? []).map((n) => n.author_id).filter(Boolean) as string[])];
+  const { data: noteAuthors } = noteAuthorIds.length
+    ? await supabase.from("users").select("id, full_name").in("id", noteAuthorIds)
+    : { data: [] };
+  const authorMap = new Map((noteAuthors ?? []).map((u) => [u.id as string, u.full_name as string]));
+  const notes = (rawNotes ?? []).map((n) => ({
+    id: n.id as string,
+    body: n.body as string,
+    created_at: n.created_at as string,
+    author_name: n.author_id ? (authorMap.get(n.author_id as string) ?? null) : null,
+  }));
 
   let spend30 = 0, conversions30 = 0, impressions30 = 0;
   for (const row of adData ?? []) {
@@ -89,11 +103,13 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               const platformLabel =
                 a.platform === "meta_ads" || a.platform === "meta" ? "FB Ads"
                 : a.platform === "meta_insights" ? "FB Insights"
+                : a.platform === "google_ads" ? "Google Ads"
                 : a.platform === "tiktok_ads" || a.platform === "tiktok" ? "TikTok"
                 : (a.platform as string);
               const platformColor =
                 a.platform === "meta_ads" || a.platform === "meta" ? "bg-blue-500/15 text-blue-300"
                 : a.platform === "meta_insights" ? "bg-cyan-500/15 text-cyan-300"
+                : a.platform === "google_ads" ? "bg-amber-500/15 text-amber-300"
                 : "bg-pink-500/15 text-pink-300";
               return (
                 <div key={a.id as string} className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-bg-soft)]">
@@ -181,6 +197,16 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </div>
             )}
           </div>
+        </Card>
+      </div>
+
+      <div className="mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><StickyNote className="w-5 h-5" /> Notes & activity</CardTitle>
+            <CardDescription>Internal notes for the team. Clients don&apos;t see this.</CardDescription>
+          </CardHeader>
+          <NotesSection brandId={id} initialNotes={notes} />
         </Card>
       </div>
     </div>
