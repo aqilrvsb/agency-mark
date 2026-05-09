@@ -1,27 +1,24 @@
 import { NextResponse } from "next/server";
 import { requireClient } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getZernio, type ZernioPlatform } from "@/lib/zernio/client";
-import { setPendingState } from "@/lib/zernio/oauth-state";
-import { randomBytes } from "node:crypto";
 
-// URL platform slug → Zernio platform enum
+// URL platform slug → Zernio platform enum (in their /connect path)
 const ZERNIO_PLATFORM: Record<string, ZernioPlatform> = {
   facebook: "facebook",
-  facebook_insights: "facebook",
-  google: "facebook", // TODO: Zernio's enum should expose 'google' once added; sending 'facebook' as fallback
+  google: "facebook", // TODO: replace once Zernio exposes 'google' in their enum
   tiktok: "tiktok",
 };
 
 // URL platform slug → our internal platform value (matches DB CHECK)
 const INTERNAL_PLATFORM: Record<string, string> = {
   facebook: "meta_ads",
-  facebook_insights: "meta_insights",
   google: "google_ads",
   tiktok: "tiktok_ads",
 };
 
-export async function POST(req: Request, ctx: { params: Promise<{ platform: string }> }) {
+export async function POST(_req: Request, ctx: { params: Promise<{ platform: string }> }) {
   const { platform } = await ctx.params;
   if (!INTERNAL_PLATFORM[platform]) {
     return NextResponse.json({ error: "Unsupported platform" }, { status: 400 });
@@ -33,35 +30,40 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
   // Find the brand assigned to this client
   const { data: brand } = await supabase
     .from("brands")
-    .select("id, company_id")
+    .select("id, company_id, name, zernio_profile_id")
     .eq("assigned_client_user_id", user.id)
     .maybeSingle();
   if (!brand) {
     return NextResponse.json({ error: "No brand assigned to this account" }, { status: 400 });
   }
 
-  // Build the callback URL
-  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : new URL(req.url).origin;
-  const redirectUri = `${baseUrl}/api/zernio/callback`;
+  const zernio = getZernio();
+  const admin = createAdminClient();
 
-  // Generate state token tying callback to this user/brand/platform
-  const state = randomBytes(32).toString("hex");
-  setPendingState(state, {
-    user_id: user.id,
-    brand_id: brand.id as string,
-    platform: INTERNAL_PLATFORM[platform],
-  });
+  // Ensure the brand has a Zernio profile (create one on first connect)
+  let profileId = brand.zernio_profile_id as string | null;
+  if (!profileId) {
+    try {
+      const profile = await zernio.createProfile({
+        name: `${brand.name} (AdSolution)`,
+        description: `Brand ${brand.id} from AdSolution`,
+      });
+      profileId = profile._id;
+      await admin.from("brands").update({ zernio_profile_id: profileId }).eq("id", brand.id);
+    } catch (e) {
+      return NextResponse.json({
+        error: `Failed to create Zernio profile: ${e instanceof Error ? e.message : String(e)}`,
+      }, { status: 500 });
+    }
+  }
 
+  // Get the OAuth URL from Zernio
   try {
-    const zernio = getZernio();
     const { authUrl } = await zernio.getConnectUrl({
       platform: ZERNIO_PLATFORM[platform],
-      redirectUri,
-      state,
+      profileId,
     });
-    return NextResponse.json({ authUrl });
+    return NextResponse.json({ authUrl, profileId });
   } catch (e) {
     return NextResponse.json({
       error: e instanceof Error ? e.message : "Zernio connect failed",

@@ -87,19 +87,34 @@ export class ZernioClient {
 
   /**
    * Build an OAuth URL that the user is redirected to in order to connect
-   * a new social account. Pass redirectUri so Zernio redirects back to our app.
+   * a new social account.
+   * Zernio expects: GET /connect/{platform}?profileId={profileId}
+   * The connection is associated with a Zernio Profile, which we create
+   * per brand on first connect.
    */
   async getConnectUrl(params: {
     platform: ZernioPlatform;
-    redirectUri: string;
-    state?: string;
+    profileId: string;
   }): Promise<{ authUrl: string }> {
-    const qs = new URLSearchParams({
-      platform: params.platform,
-      redirect_uri: params.redirectUri,
-      ...(params.state ? { state: params.state } : {}),
+    const qs = new URLSearchParams({ profileId: params.profileId });
+    return this.request<{ authUrl: string }>(`/connect/${params.platform}?${qs.toString()}`);
+  }
+
+  /**
+   * Create a Zernio Profile (workspace-like grouping for connected accounts).
+   * Returns the profile object containing _id which we store on the brand row.
+   */
+  async createProfile(params: { name: string; description?: string }): Promise<{ _id: string; name: string }> {
+    return this.request<{ _id: string; name: string }>(`/profiles`, {
+      method: "POST",
+      body: JSON.stringify(params),
     });
-    return this.request<{ authUrl: string }>(`/connect?${qs.toString()}`);
+  }
+
+  async listProfiles(): Promise<{ profiles: { _id: string; name: string }[] }> {
+    const res = await this.request<{ profiles?: { _id: string; name: string }[] } | { _id: string; name: string }[]>(`/profiles`);
+    if (Array.isArray(res)) return { profiles: res };
+    return { profiles: res.profiles ?? [] };
   }
 }
 

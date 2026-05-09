@@ -483,6 +483,7 @@ export type Database = {
           logo_url: string | null
           name: string
           updated_at: string | null
+          zernio_profile_id: string | null
         }
         Insert: {
           assigned_client_user_id?: string | null
@@ -495,6 +496,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           updated_at?: string | null
+          zernio_profile_id?: string | null
         }
         Update: {
           assigned_client_user_id?: string | null
@@ -507,6 +509,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           updated_at?: string | null
+          zernio_profile_id?: string | null
         }
         Relationships: [
           {
