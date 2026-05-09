@@ -94,6 +94,7 @@ export default async function ClientConnectionsPage({
             description="Search, Display, YouTube campaigns"
             color="from-amber-400 to-amber-600"
             connected={connected.has("google")}
+            agencyManaged
           />
           <PlatformCard
             platform="tiktok"
@@ -144,12 +145,14 @@ function PlatformCard({
   description,
   color,
   connected,
+  agencyManaged,
 }: {
   platform: string;
   label: string;
   description: string;
   color: string;
   connected: boolean;
+  agencyManaged?: boolean;
 }) {
   return (
     <Card>
@@ -165,7 +168,16 @@ function PlatformCard({
           <span className="text-xs px-2 py-1 rounded-md bg-emerald-500/15 text-emerald-300 font-bold uppercase whitespace-nowrap">Connected</span>
         )}
       </div>
-      <ConnectButton platform={platform} connected={connected} />
+      {agencyManaged ? (
+        <a
+          href="/client/support"
+          className="block text-center w-full px-4 py-2.5 rounded-xl text-sm font-bold bg-white/5 hover:bg-white/10 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition border border-[var(--color-border)]"
+        >
+          {connected ? "Managed by your agency" : "Contact agency to set up"}
+        </a>
+      ) : (
+        <ConnectButton platform={platform} connected={connected} />
+      )}
     </Card>
   );
 }

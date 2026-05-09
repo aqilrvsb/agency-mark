@@ -5,16 +5,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getZernio, type ZernioPlatform } from "@/lib/zernio/client";
 
 // URL platform slug → Zernio platform enum (in their /connect path)
+// Google Ads is NOT connectable via Zernio's OAuth — they only support
+// facebook/instagram/tiktok/linkedin/twitter/pinterest/youtube. The agency
+// has to attach Google Ads separately via Zernio's dashboard.
 const ZERNIO_PLATFORM: Record<string, ZernioPlatform> = {
   facebook: "facebook",
-  google: "facebook", // TODO: replace once Zernio exposes 'google' in their enum
   tiktok: "tiktok",
 };
 
 // URL platform slug → our internal platform value (matches DB CHECK)
 const INTERNAL_PLATFORM: Record<string, string> = {
   facebook: "meta_ads",
-  google: "google_ads",
   tiktok: "tiktok_ads",
 };
 
