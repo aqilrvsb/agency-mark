@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAgencyLeadership } from "@/lib/auth/guards";
 import { Card } from "@/components/ui/card";
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from "@/components/ui/table";
+import { InviteStaffForm } from "./invite-form";
 
 export default async function StaffPage() {
   const user = await requireAgencyLeadership();
@@ -16,9 +17,12 @@ export default async function StaffPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <header className="mb-8">
-        <h1 className="font-display font-extrabold text-4xl mb-2">Staff</h1>
-        <p className="text-[var(--color-text-secondary)]">All team members in your agency.</p>
+      <header className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display font-extrabold text-4xl mb-2">Staff</h1>
+          <p className="text-[var(--color-text-secondary)]">All team members in your agency.</p>
+        </div>
+        <InviteStaffForm />
       </header>
 
       <Card className="!p-0 !border-0 !bg-transparent">

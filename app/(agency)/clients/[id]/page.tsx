@@ -2,7 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAgencyStaff } from "@/lib/auth/guards";
 import { notFound } from "next/navigation";
 import { Card, CardTitle, CardDescription, CardHeader } from "@/components/ui/card";
-import { Building2, Wallet, BarChart3 } from "lucide-react";
+import { Building2, Wallet, BarChart3, Users } from "lucide-react";
+import { AddAdAccountForm } from "./add-ad-account-form";
+import { AssignClientForm } from "./assign-client-form";
+import { TopupForm } from "./topup-form";
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -22,10 +25,14 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
   last30.setDate(last30.getDate() - 30);
   const last30Iso = last30.toISOString().slice(0, 10);
 
-  const [{ data: adAccounts }, { data: adData }, { data: budget }] = await Promise.all([
+  const [{ data: adAccounts }, { data: adData }, { data: budget }, { data: topups }, { data: clientUser }] = await Promise.all([
     supabase.from("brand_ad_accounts").select("*").eq("brand_id", id),
     supabase.from("ad_data").select("platform, date_start, data").eq("brand_id", id).gte("date_start", last30Iso).order("date_start", { ascending: false }),
     supabase.from("client_budgets").select("*").eq("brand_id", id).maybeSingle(),
+    supabase.from("budget_topups").select("amount_myr, payment_method, status, created_at").eq("brand_id", id).order("created_at", { ascending: false }).limit(5),
+    brand.assigned_client_user_id
+      ? supabase.from("users").select("email, full_name").eq("id", brand.assigned_client_user_id as string).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   let spend30 = 0, conversions30 = 0, impressions30 = 0;
@@ -75,43 +82,57 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Connected ad accounts</CardTitle>
-            <CardDescription>Master admin needs to add these to Adzviser workspace.</CardDescription>
+            <CardDescription>Connect FB Ads, FB Page Insights, and TikTok Ads via Zernio.</CardDescription>
           </CardHeader>
           <div className="space-y-2">
-            {(adAccounts ?? []).map((a) => (
-              <div key={a.id as string} className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-bg-soft)]">
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${a.platform === "meta" ? "bg-blue-500/15 text-blue-300" : "bg-pink-500/15 text-pink-300"}`}>
-                    {a.platform === "meta" ? "FB" : "TT"}
+            {(adAccounts ?? []).map((a) => {
+              const platformLabel =
+                a.platform === "meta_ads" || a.platform === "meta" ? "FB Ads"
+                : a.platform === "meta_insights" ? "FB Insights"
+                : a.platform === "tiktok_ads" || a.platform === "tiktok" ? "TikTok"
+                : (a.platform as string);
+              const platformColor =
+                a.platform === "meta_ads" || a.platform === "meta" ? "bg-blue-500/15 text-blue-300"
+                : a.platform === "meta_insights" ? "bg-cyan-500/15 text-cyan-300"
+                : "bg-pink-500/15 text-pink-300";
+              return (
+                <div key={a.id as string} className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-bg-soft)]">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${platformColor}`}>{platformLabel}</span>
+                    <code className="text-xs">{a.external_account_id as string}</code>
+                  </div>
+                  <span className="text-xs text-[var(--color-text-muted)]">
+                    {(a.external_account_name as string) || "—"}
                   </span>
-                  <code className="text-xs">{a.external_account_id as string}</code>
                 </div>
-                <span className="text-xs text-[var(--color-text-muted)]">
-                  {(a.external_account_name as string) || "—"}
-                </span>
-              </div>
-            ))}
+              );
+            })}
             {(adAccounts ?? []).length === 0 && (
               <div className="text-sm text-[var(--color-text-muted)] py-4 text-center">
-                No ad accounts connected yet. Contact admin to add via Adzviser.
+                No ad accounts connected yet.
               </div>
             )}
+            <div className="pt-2">
+              <AddAdAccountForm brandId={id} />
+            </div>
           </div>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Wallet className="w-5 h-5" /> Recent ad data</CardTitle>
-            <CardDescription>Daily snapshots from Adzviser → BigQuery → Supabase.</CardDescription>
+            <CardDescription>Daily snapshots synced from Zernio.</CardDescription>
           </CardHeader>
           <div className="space-y-1.5">
             {(adData ?? []).slice(0, 8).map((row, i) => {
               const d = row.data as Record<string, unknown>;
+              const platformShort = (row.platform as string)?.startsWith("meta") ? "FB" : "TT";
+              const platformColor = (row.platform as string)?.startsWith("meta") ? "bg-blue-500/15 text-blue-300" : "bg-pink-500/15 text-pink-300";
               return (
                 <div key={i} className="flex items-center justify-between text-xs py-2 border-b border-[var(--color-border)] last:border-0">
                   <span className="text-[var(--color-text-muted)]">{row.date_start as string}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${row.platform === "meta" ? "bg-blue-500/15 text-blue-300" : "bg-pink-500/15 text-pink-300"}`}>
-                    {row.platform as string}
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${platformColor}`}>
+                    {platformShort}
                   </span>
                   <span className="font-mono">RM {Number(d.spend ?? 0).toFixed(2)}</span>
                 </div>
@@ -120,6 +141,43 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             {(adData ?? []).length === 0 && (
               <div className="text-sm text-[var(--color-text-muted)] py-4 text-center">
                 No data yet. Wait for next sync.
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Client portal user</CardTitle>
+            <CardDescription>Give the client a login to view their own dashboard.</CardDescription>
+          </CardHeader>
+          <AssignClientForm brandId={id} currentClientEmail={(clientUser as { email?: string } | null)?.email ?? null} />
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Wallet className="w-5 h-5" /> Budget</CardTitle>
+            <CardDescription>
+              Balance: RM {Number(budget?.current_balance_myr ?? 0).toLocaleString()} ·
+              Total topped up: RM {Number(budget?.total_topup_myr ?? 0).toLocaleString()}
+            </CardDescription>
+          </CardHeader>
+          <div className="space-y-3">
+            <TopupForm brandId={id} />
+            {(topups ?? []).length > 0 && (
+              <div className="pt-2 border-t border-[var(--color-border)] space-y-1">
+                <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold mb-2">Recent top-ups</div>
+                {(topups ?? []).map((t, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs py-1.5">
+                    <span className="text-[var(--color-text-muted)]">
+                      {new Date(t.created_at as string).toLocaleDateString()}
+                    </span>
+                    <span className="text-[var(--color-text-muted)]">{(t.payment_method as string) || "—"}</span>
+                    <span className="font-mono">RM {Number(t.amount_myr).toFixed(2)}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
