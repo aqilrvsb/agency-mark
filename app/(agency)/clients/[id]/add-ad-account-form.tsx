@@ -43,7 +43,7 @@ export function AddAdAccountForm({ brandId }: { brandId: string }) {
 
   if (!open) {
     return (
-      <Button onClick={() => setOpen(true)} size="sm" variant="outline">
+      <Button onClick={() => setOpen(true)} size="sm" variant="secondary">
         <Plus className="w-4 h-4" /> Add ad account
       </Button>
     );
@@ -107,7 +107,7 @@ export function AddAdAccountForm({ brandId }: { brandId: string }) {
         <Button type="submit" disabled={loading || !externalId.trim()} size="sm">
           {loading ? "Adding..." : "Add"}
         </Button>
-        <Button type="button" onClick={() => setOpen(false)} variant="outline" size="sm">
+        <Button type="button" onClick={() => setOpen(false)} variant="secondary" size="sm">
           Cancel
         </Button>
       </div>

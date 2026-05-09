@@ -122,7 +122,7 @@ export function InviteStaffForm() {
         <Button type="submit" disabled={loading || !email.trim() || !fullName.trim()}>
           {loading ? "Inviting..." : "Send invite"}
         </Button>
-        <Button type="button" onClick={() => setOpen(false)} variant="outline">
+        <Button type="button" onClick={() => setOpen(false)} variant="secondary">
           Cancel
         </Button>
       </div>

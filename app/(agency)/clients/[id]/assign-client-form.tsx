@@ -71,7 +71,7 @@ export function AssignClientForm({ brandId, currentClientEmail }: { brandId: str
       );
     }
     return (
-      <Button onClick={() => setOpen(true)} size="sm" variant="outline">
+      <Button onClick={() => setOpen(true)} size="sm" variant="secondary">
         <UserPlus className="w-4 h-4" /> Create client portal user
       </Button>
     );
@@ -107,7 +107,7 @@ export function AssignClientForm({ brandId, currentClientEmail }: { brandId: str
         <Button type="submit" disabled={loading || !email.trim() || !fullName.trim()} size="sm">
           {loading ? "Creating..." : "Create user"}
         </Button>
-        <Button type="button" onClick={() => setOpen(false)} variant="outline" size="sm">Cancel</Button>
+        <Button type="button" onClick={() => setOpen(false)} variant="secondary" size="sm">Cancel</Button>
       </div>
     </form>
   );

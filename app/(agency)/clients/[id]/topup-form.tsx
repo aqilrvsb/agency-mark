@@ -48,7 +48,7 @@ export function TopupForm({ brandId }: { brandId: string }) {
 
   if (!open) {
     return (
-      <Button onClick={() => setOpen(true)} size="sm" variant="outline">
+      <Button onClick={() => setOpen(true)} size="sm" variant="secondary">
         <Plus className="w-4 h-4" /> Top up budget
       </Button>
     );
@@ -104,7 +104,7 @@ export function TopupForm({ brandId }: { brandId: string }) {
         <Button type="submit" disabled={loading || !amount} size="sm">
           {loading ? "Recording..." : "Record top-up"}
         </Button>
-        <Button type="button" onClick={() => setOpen(false)} variant="outline" size="sm">Cancel</Button>
+        <Button type="button" onClick={() => setOpen(false)} variant="secondary" size="sm">Cancel</Button>
       </div>
     </form>
   );
