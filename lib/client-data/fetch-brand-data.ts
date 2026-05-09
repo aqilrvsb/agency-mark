@@ -3,13 +3,15 @@ import { aggregateAdData, summarize, type AdLevel } from "./aggregate";
 
 /**
  * Shared loader for the per-platform pages on the client portal.
- * Returns the assigned brand + 30-day aggregated rows for the level.
+ * Returns the assigned brand + aggregated rows for the level over the
+ * given date range (defaults: last 30 days).
  */
 export async function loadBrandLevelData(opts: {
   userId: string;
   platforms: string[];
   level: AdLevel;
-  days?: number;
+  start?: string; // YYYY-MM-DD
+  end?: string;   // YYYY-MM-DD
 }) {
   const supabase = await createClient();
 
@@ -21,16 +23,23 @@ export async function loadBrandLevelData(opts: {
 
   if (!brand) return { brand: null, rows: [], totals: null };
 
-  const start = new Date();
-  start.setDate(start.getDate() - (opts.days ?? 30));
-  const startIso = start.toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultStart = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  const startIso = opts.start ?? defaultStart;
+  const endIso = opts.end ?? today;
 
   const { data: adData } = await supabase
     .from("ad_data")
     .select("platform, date_start, data")
     .eq("brand_id", brand.id as string)
     .in("platform", opts.platforms)
-    .gte("date_start", startIso);
+    .gte("date_start", startIso)
+    .lte("date_start", endIso);
 
   const rows = aggregateAdData(adData ?? [], opts.level);
   const totals = summarize(rows);
