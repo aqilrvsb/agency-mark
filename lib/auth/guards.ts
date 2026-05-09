@@ -47,6 +47,22 @@ export async function requireRole(allowed: UserRole[]): Promise<UserProfile> {
 }
 
 export const requirePlatformAdmin = () => requireRole(["platform_admin"]);
-export const requireAgencyStaff = () => requireRole(["platform_admin", "bod", "leader", "marketer"]);
-export const requireAgencyLeadership = () => requireRole(["platform_admin", "bod", "leader"]);
 export const requireClient = () => requireRole(["platform_admin", "client"]);
+
+export interface AgencyUserProfile extends UserProfile {
+  company_id: string;
+}
+
+async function requireAgencyWithCompany(allowed: UserRole[]): Promise<AgencyUserProfile> {
+  const user = await requireRole(allowed);
+  if (!user.company_id) {
+    if (user.role === "platform_admin") redirect("/platform");
+    redirect("/login?error=no_company");
+  }
+  return user as AgencyUserProfile;
+}
+
+export const requireAgencyStaff = () =>
+  requireAgencyWithCompany(["platform_admin", "bod", "leader", "marketer"]);
+export const requireAgencyLeadership = () =>
+  requireAgencyWithCompany(["platform_admin", "bod", "leader"]);
