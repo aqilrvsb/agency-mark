@@ -1,7 +1,8 @@
 import { requireClient } from "@/lib/auth/guards";
 import Link from "next/link";
-import { Sparkles, LayoutDashboard, Megaphone, Wallet, FileText, Bell, Settings, MessageCircle, Plug } from "lucide-react";
+import { Sparkles, LayoutDashboard, Wallet, FileText, Bell, Settings, MessageCircle, Plug } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
+import { PlatformNavSection } from "./platform-nav";
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
   const user = await requireClient();
@@ -22,14 +23,57 @@ export default async function ClientLayout({ children }: { children: React.React
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          <NavItem href="/client/overview" icon={LayoutDashboard}>Overview</NavItem>
-          <NavItem href="/client/connections" icon={Plug}>Connect Ads</NavItem>
-          <NavItem href="/client/campaigns" icon={Megaphone}>Campaigns</NavItem>
-          <NavItem href="/client/budget" icon={Wallet}>Budget</NavItem>
-          <NavItem href="/client/reports" icon={FileText}>Reports</NavItem>
-          <NavItem href="/client/notifications" icon={Bell}>Notifications</NavItem>
-          <NavItem href="/client/support" icon={MessageCircle}>Support</NavItem>
-          <NavItem href="/client/settings" icon={Settings}>Settings</NavItem>
+          <ul className="space-y-1">
+            <li><NavItem href="/client/overview" icon={LayoutDashboard}>Overview</NavItem></li>
+            <li><NavItem href="/client/connections" icon={Plug}>Connect Ads</NavItem></li>
+          </ul>
+
+          <div className="pt-4">
+            <div className="px-3 text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-bold mb-2">Data sources</div>
+            <ul className="space-y-1">
+              <PlatformNavSection
+                platform="facebook"
+                label="Facebook Ads"
+                color="bg-blue-400"
+                items={[
+                  { href: "/client/facebook/campaigns", label: "Campaigns" },
+                  { href: "/client/facebook/adsets", label: "Ad Sets" },
+                  { href: "/client/facebook/ads", label: "Ads" },
+                ]}
+              />
+              <PlatformNavSection
+                platform="google"
+                label="Google Ads"
+                color="bg-amber-400"
+                items={[
+                  { href: "/client/google/campaigns", label: "Campaigns" },
+                  { href: "/client/google/adgroups", label: "Ad Groups" },
+                  { href: "/client/google/ads", label: "Ads" },
+                ]}
+              />
+              <PlatformNavSection
+                platform="tiktok"
+                label="TikTok Ads"
+                color="bg-pink-400"
+                items={[
+                  { href: "/client/tiktok/campaigns", label: "Campaigns" },
+                  { href: "/client/tiktok/adgroups", label: "Ad Groups" },
+                  { href: "/client/tiktok/ads", label: "Ads" },
+                ]}
+              />
+            </ul>
+          </div>
+
+          <div className="pt-4">
+            <div className="px-3 text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-bold mb-2">Account</div>
+            <ul className="space-y-1">
+              <li><NavItem href="/client/budget" icon={Wallet}>Budget</NavItem></li>
+              <li><NavItem href="/client/reports" icon={FileText}>Reports</NavItem></li>
+              <li><NavItem href="/client/notifications" icon={Bell}>Notifications</NavItem></li>
+              <li><NavItem href="/client/support" icon={MessageCircle}>Support</NavItem></li>
+              <li><NavItem href="/client/settings" icon={Settings}>Settings</NavItem></li>
+            </ul>
+          </div>
         </nav>
 
         <div className="p-3 border-t border-[var(--color-border)]">
