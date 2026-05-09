@@ -2,7 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAgencyStaff } from "@/lib/auth/guards";
 import { Card, CardTitle, CardDescription, CardHeader } from "@/components/ui/card";
 import { AgencyProfileForm } from "./agency-profile-form";
-import { Building2, CreditCard } from "lucide-react";
+import { PasswordChangeForm } from "@/app/(client)/client/settings/password-form";
+import { Building2, CreditCard, KeyRound } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,14 @@ export default async function AgencySettingsPage() {
           }}
           canEdit={canEdit}
         />
+      </Card>
+
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5" /> Change password</CardTitle>
+          <CardDescription>Update your AdSolution login password.</CardDescription>
+        </CardHeader>
+        <PasswordChangeForm />
       </Card>
 
       <Card>

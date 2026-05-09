@@ -1,6 +1,6 @@
 import { requireClient } from "@/lib/auth/guards";
 import Link from "next/link";
-import { Sparkles, LayoutDashboard, Megaphone, Wallet, FileText, Bell, Settings, MessageCircle } from "lucide-react";
+import { Sparkles, LayoutDashboard, Megaphone, Wallet, FileText, Bell, Settings, MessageCircle, Plug } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -23,6 +23,7 @@ export default async function ClientLayout({ children }: { children: React.React
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           <NavItem href="/client/overview" icon={LayoutDashboard}>Overview</NavItem>
+          <NavItem href="/client/connections" icon={Plug}>Connect Ads</NavItem>
           <NavItem href="/client/campaigns" icon={Megaphone}>Campaigns</NavItem>
           <NavItem href="/client/budget" icon={Wallet}>Budget</NavItem>
           <NavItem href="/client/reports" icon={FileText}>Reports</NavItem>
