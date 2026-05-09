@@ -43,13 +43,13 @@ export async function syncAgency(companyId: string): Promise<{
 
   // 3. Fetch + upsert per ad account
   for (const acc of adAccounts) {
-    const platform = (acc.platform as string) as Platform;
-    if (!["meta_ads", "tiktok_ads", "meta_insights", "meta", "tiktok"].includes(platform)) continue;
+    const rawPlatform = acc.platform as string;
+    if (!["meta_ads", "tiktok_ads", "meta_insights", "meta", "tiktok"].includes(rawPlatform)) continue;
 
     // Map legacy values to new
     const normalizedPlatform: Platform =
-      platform === "meta" || platform === "meta_ads" ? "meta_ads"
-      : platform === "tiktok" || platform === "tiktok_ads" ? "tiktok_ads"
+      rawPlatform === "meta" || rawPlatform === "meta_ads" ? "meta_ads"
+      : rawPlatform === "tiktok" || rawPlatform === "tiktok_ads" ? "tiktok_ads"
       : "meta_insights";
 
     try {
