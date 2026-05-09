@@ -112,17 +112,27 @@ export class ZernioClient {
 
   /**
    * Create a Zernio Profile (workspace-like grouping for connected accounts).
-   * Returns the profile object containing _id which we store on the brand row.
+   * Zernio's actual response shape is:
+   *   { message: "...", profile: { _id, name, ... } }
+   * so we unwrap.
    */
   async createProfile(params: { name: string; description?: string }): Promise<{ _id: string; name: string }> {
-    return this.request<{ _id: string; name: string }>(`/profiles`, {
+    const res = await this.request<
+      | { _id: string; name: string }
+      | { profile: { _id: string; name: string } }
+    >(`/profiles`, {
       method: "POST",
       body: JSON.stringify(params),
     });
+    if ("profile" in res && res.profile) return res.profile;
+    return res as { _id: string; name: string };
   }
 
   async listProfiles(): Promise<{ profiles: { _id: string; name: string }[] }> {
-    const res = await this.request<{ profiles?: { _id: string; name: string }[] } | { _id: string; name: string }[]>(`/profiles`);
+    const res = await this.request<
+      | { profiles?: { _id: string; name: string }[] }
+      | { _id: string; name: string }[]
+    >(`/profiles`);
     if (Array.isArray(res)) return { profiles: res };
     return { profiles: res.profiles ?? [] };
   }
