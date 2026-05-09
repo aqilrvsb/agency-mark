@@ -1,0 +1,576 @@
+/* Fonts now self-hosted via next/font in app/layout.tsx — eliminates the
+   render-blocking @import to fonts.googleapis.com (-200~600ms LCP). */
+@import "tailwindcss";
+
+@theme {
+  /* Higgsfield-style dark canvas — pure black, vibrant accents pop */
+  --color-bg: #0a0a0a;
+  --color-bg-soft: #131313;
+  --color-bg-card: #161616;
+  --color-border: #262626;
+  --color-border-bright: #3a3a3a;
+
+  /* Off-white headlines, light-gray body — softer than pure white on black */
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #b5b5b5;
+  --color-text-muted: #707070;
+
+  /* Primary accent — highfield yellow (PeningLab brand). The legacy
+     "orange" naming is kept so every `text-orange` / `bg-orange-50`
+     / `from-orange-400` class across the app renders yellow without
+     a JSX-wide rename. Numeric shades remap Tailwind's orange palette
+     to yellow-{50..900} values so gradients + hover states stay
+     coherent. */
+  --color-orange: #facc15;
+  --color-orange-hover: #fde047;
+  --color-orange-soft: rgba(250, 204, 21, 0.18);
+  --color-orange-tint: rgba(250, 204, 21, 0.08);
+  --color-orange-50:  #fefce8;
+  --color-orange-100: #fef9c3;
+  --color-orange-200: #fef08a;
+  --color-orange-300: #fde047;
+  --color-orange-400: #facc15;
+  --color-orange-500: #eab308;
+  --color-orange-600: #ca8a04;
+  --color-orange-700: #a16207;
+  --color-orange-800: #854d0e;
+  --color-orange-900: #713f12;
+
+  /* Higgsfield neon-lime — secondary attention CTA */
+  --color-lime: #c8f53e;
+  --color-lime-hover: #d8ff4e;
+  --color-lime-soft: rgba(200, 245, 62, 0.12);
+
+  /* Supporting accents */
+  --color-black: #0a0a0a;
+  --color-amber: #ffb700;
+  --color-emerald: #34d399;
+  --color-danger: #ef4444;
+  --color-success: #34d399;
+
+  /* Aliases — keep old names working */
+  --color-accent-violet: var(--color-orange);
+  --color-accent-blue: var(--color-orange);
+  --color-accent-pink: var(--color-orange);
+  --color-accent-amber: var(--color-amber);
+  --color-accent-emerald: var(--color-emerald);
+
+  /* Reference next/font CSS variables (set on <html> by app/layout.tsx) with
+     system-stack fallbacks so the page is readable even before fonts hydrate. */
+  --font-display: var(--peninglab-font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--peninglab-font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--peninglab-font-mono), ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.011em;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+  font-feature-settings: "ss01", "ss02";
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Color helper classes — semantic names */
+.text-orange { color: var(--color-orange); }
+.text-violet { color: var(--color-orange); }
+.text-blue { color: var(--color-orange); }
+.text-pink { color: var(--color-orange); }
+.text-amber { color: var(--color-amber); }
+.text-emerald { color: var(--color-emerald); }
+
+/* Single-direction orange gradient — keeps the brand cohesive */
+.gradient-text-violet,
+.gradient-text-blue,
+.gradient-text-multi,
+.gradient-text {
+  background: linear-gradient(135deg, #ff6a1a 0%, #ff4d00 60%, #d63800 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
+.gradient-text-warm {
+  background: linear-gradient(135deg, var(--color-amber) 0%, var(--color-orange) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
+.bg-sky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(180deg, #0a0a0a 0%, #0d0d0d 30%, #0a0a0a 100%);
+}
+
+/* Hide horizontal scrollbar on mobile nav rows that use overflow-x-auto.
+   The scroll behaviour stays — only the visible scrollbar (and the
+   gutter space it claims under the row) is removed. Used by the admin
+   tab nav and the dashboard mobile project chip row. */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    linear-gradient(to right, rgba(255, 87, 34, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 87, 34, 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black, transparent);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black, transparent);
+}
+
+.bg-soft-glow {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(80px);
+  opacity: 0.4;
+}
+
+.bg-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: var(--color-orange);
+  color: #1a1a1a;
+  font-weight: 800;
+  font-size: 15px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+  /* Glow uses the new yellow brand value (#facc15 / rgb 250 204 21). */
+  box-shadow:
+    0 6px 20px rgba(250, 204, 21, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  letter-spacing: -0.01em;
+}
+
+.btn-primary:hover {
+  background: var(--color-orange-hover);
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 30px rgba(250, 204, 21, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-border-bright);
+}
+
+.btn-lime {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: var(--color-lime);
+  color: #0a0a0a;
+  font-weight: 800;
+  font-size: 15px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 6px 20px rgba(200, 245, 62, 0.3);
+  letter-spacing: -0.01em;
+}
+
+.btn-lime:hover {
+  background: var(--color-lime-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(200, 245, 62, 0.45);
+}
+
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  padding: 28px;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-border-bright);
+  box-shadow: 0 24px 48px -16px rgba(255, 87, 34, 0.25);
+}
+
+.input {
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  /* Tells the browser to render type="date" / type="time" picker UI
+     in dark mode so the calendar icon + spinner controls don't render
+     with a light-on-light overlay (the cause of the "double 31"
+     ghosting on the admin date filters). */
+  color-scheme: dark;
+}
+
+.input:focus {
+  border-color: var(--color-orange);
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.2);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Date input cleanup — Chrome renders each segment of <input type="date">
+   (day / month / year) as its own focusable subfield with a default
+   light-grey focus box. On the dark theme that box ghosts in front of
+   the value as a small bracket-like artefact. Remove the subfield
+   backgrounds + outlines, brighten the calendar icon for dark mode. */
+.input::-webkit-datetime-edit,
+.input::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+  background: transparent;
+}
+.input::-webkit-datetime-edit-text {
+  color: var(--color-text-muted);
+  padding: 0 2px;
+}
+.input::-webkit-datetime-edit-day-field,
+.input::-webkit-datetime-edit-month-field,
+.input::-webkit-datetime-edit-year-field {
+  color: var(--color-text-primary);
+  background: transparent;
+  outline: none;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+.input::-webkit-datetime-edit-day-field:focus,
+.input::-webkit-datetime-edit-month-field:focus,
+.input::-webkit-datetime-edit-year-field:focus {
+  background: var(--color-orange-soft);
+  color: var(--color-text-primary);
+  outline: none;
+}
+.input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  filter: invert(0.8);
+}
+.input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--color-orange-tint);
+  border: 1px solid var(--color-orange-soft);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-orange);
+  letter-spacing: 0.01em;
+}
+
+.chip-pulse::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-orange);
+  box-shadow: 0 0 8px var(--color-orange);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float-y 6s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  gap: 16px;
+  animation: marquee 40s linear infinite;
+  width: max-content;
+}
+
+.marquee-mask {
+  mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+}
+
+.phone-frame {
+  position: relative;
+  aspect-ratio: 9 / 19.5;
+  background: #0a0a0a;
+  border-radius: 36px;
+  padding: 8px;
+  box-shadow:
+    0 30px 80px -20px rgba(255, 77, 0, 0.35),
+    0 0 0 2px rgba(255, 255, 255, 0.5),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.06);
+}
+
+.phone-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a0a05 0%, #2d1208 50%, #4d1f0a 100%);
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+.bento {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 28px;
+  padding: 32px;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.bento:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-border-bright);
+  box-shadow: 0 24px 48px -16px rgba(255, 87, 34, 0.25);
+}
+
+.bento-deco {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.step-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--color-orange);
+  color: white;
+  font-weight: 800;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  box-shadow: 0 4px 12px rgba(255, 77, 0, 0.32);
+}
+
+.sticker {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--color-orange-soft);
+  border: 1.5px solid var(--color-orange);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-orange-hover);
+  letter-spacing: 0.02em;
+  transform: rotate(-2deg);
+  box-shadow: 2px 2px 0 rgba(214, 56, 0, 0.2);
+}
+
+.tag-mono {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: var(--color-orange-tint);
+  border: 1px solid var(--color-orange-soft);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-orange);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tag-mono-blue,
+.tag-mono-pink,
+.tag-mono-amber,
+.tag-mono-emerald {
+  background: var(--color-orange-tint);
+  border-color: var(--color-orange-soft);
+  color: var(--color-orange);
+}
+
+details.faq-item {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 0;
+  transition: border-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+details.faq-item[open] {
+  border-color: rgba(255, 87, 34, 0.4);
+  box-shadow: 0 8px 20px -8px rgba(255, 87, 34, 0.25);
+}
+
+details.faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-text-primary);
+}
+
+details.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+details.faq-item summary::after {
+  content: "+";
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-orange);
+  transition: transform 0.2s;
+}
+
+details.faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+
+details.faq-item .faq-body {
+  padding: 0 24px 20px;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+}
+
+.section-heading {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-size: clamp(2.25rem, 5vw, 4rem);
+}
+
+.stat-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.avatar-stack > * + * {
+  margin-left: -10px;
+}
+
+/* Admin sidebar nav hover — used by app/admin/layout.tsx
+   (server component cannot use onMouseEnter handlers, so this stays in CSS) */
+.admin-nav-item:hover {
+  background: rgba(250, 204, 21, 0.10);
+}
