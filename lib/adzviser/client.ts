@@ -74,16 +74,18 @@ export class AdzviserClient {
 }
 
 // Helper: build client for a given agency (looks up API key from DB)
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
+
 export async function getAdzviserForCompany(
   companyId: string,
-  supabaseAdmin: { from: (t: string) => unknown } // SupabaseClient — kept loose to avoid circular import
+  supabaseAdmin: SupabaseClient<Database>
 ): Promise<AdzviserClient | null> {
-  const sb = supabaseAdmin as ReturnType<typeof import("@supabase/supabase-js").createClient>;
-  const { data } = await sb
+  const { data } = await supabaseAdmin
     .from("adzviser_connections")
     .select("api_key, workspace_id, is_active")
     .eq("company_id", companyId)
     .maybeSingle();
   if (!data || !data.is_active) return null;
-  return new AdzviserClient(data.api_key as string, data.workspace_id as string | undefined);
+  return new AdzviserClient(data.api_key, data.workspace_id ?? undefined);
 }
