@@ -28,11 +28,21 @@ export interface ZernioAdAnalyticsRow {
 }
 
 export class ZernioClient {
-  constructor(
-    private apiKey: string = process.env.ZERNIO_API_KEY!,
-    private baseUrl: string = process.env.ZERNIO_API_BASE_URL ?? "https://zernio.com/api/v1"
-  ) {
+  private apiKey: string;
+  private baseUrl: string;
+
+  constructor(apiKey?: string, baseUrl?: string) {
+    this.apiKey = apiKey ?? process.env.ZERNIO_API_KEY ?? "";
     if (!this.apiKey) throw new Error("ZERNIO_API_KEY env var is not set");
+    // Zernio's REST API lives at zernio.com/api/v1. We saw 405s when the env
+    // var was accidentally set to https://api.zernio.com (no /api/v1), so
+    // normalize known-bad values to the canonical host.
+    const raw = baseUrl ?? process.env.ZERNIO_API_BASE_URL ?? "https://zernio.com/api/v1";
+    const normalized = raw.replace(/\/$/, "");
+    this.baseUrl =
+      normalized === "https://api.zernio.com" || normalized === "https://zernio.com"
+        ? "https://zernio.com/api/v1"
+        : normalized;
   }
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {

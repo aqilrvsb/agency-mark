@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireClient } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getZernio, type ZernioPlatform } from "@/lib/zernio/client";
 
 // URL platform slug → Zernio platform enum (in their /connect path)
@@ -38,17 +39,40 @@ export async function POST(_req: Request, ctx: { params: Promise<{ platform: str
 
   const zernio = getZernio();
 
-  // The brand needs a Zernio profile attached before we can start an OAuth.
-  // We tried auto-creating via POST /profiles but Zernio's API rejects that
-  // for our key tier (returns 405). For now, the agency must paste a
-  // pre-created Zernio profileId via the master admin tools.
-  const profileId = brand.zernio_profile_id as string | null;
+  // Ensure a Zernio profile exists for this brand. Profile = workspace-like
+  // grouping that owns the connected social accounts. One per brand.
+  let profileId = brand.zernio_profile_id as string | null;
   if (!profileId) {
-    return NextResponse.json({
-      error:
-        "Your agency hasn't finished setting up your Zernio workspace yet. Use the Support page to contact them, and they'll attach a Zernio profile to your brand. Once that's done, the Connect button will work.",
-      code: "no_profile",
-    }, { status: 400 });
+    try {
+      const profile = await zernio.createProfile({
+        name: `${brand.name} (AdSolution)`,
+        description: `Auto-created for AdSolution brand ${brand.id}`,
+      });
+      profileId = profile._id;
+      const admin = createAdminClient();
+      await admin
+        .from("brands")
+        .update({ zernio_profile_id: profileId })
+        .eq("id", brand.id as string);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to create Zernio profile";
+      // If the profile already exists upstream, try to find it.
+      if (msg.includes("already exists")) {
+        const { profiles } = await zernio.listProfiles();
+        const match = profiles.find((p) => p.name === `${brand.name} (AdSolution)`);
+        if (match) {
+          profileId = match._id;
+          const admin = createAdminClient();
+          await admin
+            .from("brands")
+            .update({ zernio_profile_id: profileId })
+            .eq("id", brand.id as string);
+        }
+      }
+      if (!profileId) {
+        return NextResponse.json({ error: msg }, { status: 500 });
+      }
+    }
   }
 
   // Get the OAuth URL from Zernio
