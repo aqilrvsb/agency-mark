@@ -46,7 +46,8 @@ export default async function AdzviserKeysPage() {
           </TableHead>
           <TableBody>
             {(connections ?? []).map((c) => {
-              const company = c.companies as { name: string; prefix: string } | null;
+              const companiesData = c.companies as unknown as { name: string; prefix: string }[] | { name: string; prefix: string } | null;
+              const company = Array.isArray(companiesData) ? companiesData[0] ?? null : companiesData;
               return (
                 <TableRow key={c.id as string}>
                   <TableCell>

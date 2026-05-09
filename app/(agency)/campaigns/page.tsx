@@ -47,7 +47,8 @@ export default async function CampaignsPage() {
               const revenue = Number(d.purchase_value ?? d.action_values_purchase ?? 0);
               const ctr = impressions > 0 ? ((clicks / impressions) * 100).toFixed(2) : "0";
               const roas = spend > 0 ? (revenue / spend).toFixed(2) : "—";
-              const brandName = (r.brands as { name: string } | null)?.name ?? "—";
+              const brands = r.brands as unknown as { name: string }[] | { name: string } | null;
+              const brandName = Array.isArray(brands) ? brands[0]?.name ?? "—" : brands?.name ?? "—";
               return (
                 <TableRow key={i}>
                   <TableCell className="text-xs">{r.date_start as string}</TableCell>

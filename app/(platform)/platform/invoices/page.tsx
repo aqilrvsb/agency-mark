@@ -31,7 +31,8 @@ export default async function PlatformInvoicesPage() {
           </TableHead>
           <TableBody>
             {(invoices ?? []).map((inv) => {
-              const company = inv.companies as { name: string } | null;
+              const companiesData = inv.companies as unknown as { name: string }[] | { name: string } | null;
+              const company = Array.isArray(companiesData) ? companiesData[0] ?? null : companiesData;
               const statusColor = inv.status === "paid" ? "emerald" : inv.status === "overdue" ? "red" : "amber";
               return (
                 <TableRow key={inv.id as string}>
