@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Json } from "@/lib/supabase/types";
 import { readAdzviserTable } from "./client";
 
 export type Platform = "meta" | "tiktok" | "meta_insights";
@@ -92,10 +93,10 @@ export async function syncAgency(companyId: string): Promise<{
         const inserts = accRows.map((r) => ({
           company_id: companyId,
           brand_id: mapping.brand_id,
-          platform: platform === "meta_insights" ? "meta" : platform,
+          platform: (platform === "meta_insights" ? "meta" : platform) as string,
           date_start: r.date as string,
           date_end: r.date as string,
-          data: r,
+          data: r as unknown as Json,
         }));
 
         const { error: insErr } = await admin.from("ad_data").insert(inserts);
