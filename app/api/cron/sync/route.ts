@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { syncAllAgencies } from "@/lib/bigquery/sync";
+import { syncAllAgencies } from "@/lib/zernio/sync";
 
 /**
  * Hourly cron endpoint. Vercel Cron or external scheduler hits this.

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { syncAgency } from "@/lib/bigquery/sync";
+import { syncAgency } from "@/lib/zernio/sync";
 
 /**
  * Manual sync trigger for a single agency. Used by master admin "Sync now" button.
