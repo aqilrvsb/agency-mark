@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireClient } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { getZernio, type ZernioPlatform } from "@/lib/zernio/client";
 
 // URL platform slug → Zernio platform enum (in their /connect path)
@@ -40,21 +39,17 @@ export async function POST(_req: Request, ctx: { params: Promise<{ platform: str
   const zernio = getZernio();
   const admin = createAdminClient();
 
-  // Ensure the brand has a Zernio profile (create one on first connect)
-  let profileId = brand.zernio_profile_id as string | null;
+  // The brand needs a Zernio profile attached before we can start an OAuth.
+  // We tried auto-creating via POST /profiles but Zernio's API rejects that
+  // for our key tier (returns 405). For now, the agency must paste a
+  // pre-created Zernio profileId via the master admin tools.
+  const profileId = brand.zernio_profile_id as string | null;
   if (!profileId) {
-    try {
-      const profile = await zernio.createProfile({
-        name: `${brand.name} (AdSolution)`,
-        description: `Brand ${brand.id} from AdSolution`,
-      });
-      profileId = profile._id;
-      await admin.from("brands").update({ zernio_profile_id: profileId }).eq("id", brand.id);
-    } catch (e) {
-      return NextResponse.json({
-        error: `Failed to create Zernio profile: ${e instanceof Error ? e.message : String(e)}`,
-      }, { status: 500 });
-    }
+    return NextResponse.json({
+      error:
+        "Your agency hasn't finished setting up your Zernio workspace yet. Use the Support page to contact them, and they'll attach a Zernio profile to your brand. Once that's done, the Connect button will work.",
+      code: "no_profile",
+    }, { status: 400 });
   }
 
   // Get the OAuth URL from Zernio
