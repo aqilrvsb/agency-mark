@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,9 +16,11 @@ export interface UserProfile {
 
 /**
  * Get current authenticated user + profile.
- * Returns null if not signed in.
+ * React cache() dedupes calls within a single request — if a page
+ * calls requireAgencyStaff() and a child component also needs the
+ * user, only one Supabase round-trip is made.
  */
-export async function getCurrentUser(): Promise<UserProfile | null> {
+export const getCurrentUser = cache(async (): Promise<UserProfile | null> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -29,7 +32,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     .maybeSingle();
 
   return (profile as UserProfile) ?? null;
-}
+});
 
 /**
  * Require auth + specific roles. Redirects if not authorized.
