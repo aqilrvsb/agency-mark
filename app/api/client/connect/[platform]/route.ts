@@ -37,7 +37,6 @@ export async function POST(_req: Request, ctx: { params: Promise<{ platform: str
   }
 
   const zernio = getZernio();
-  const admin = createAdminClient();
 
   // The brand needs a Zernio profile attached before we can start an OAuth.
   // We tried auto-creating via POST /profiles but Zernio's API rejects that
