@@ -42,7 +42,7 @@ export async function updateSession(request: NextRequest) {
                        path.startsWith("/campaigns") || path.startsWith("/analytics") ||
                        path.startsWith("/staff") || path.startsWith("/invoices") ||
                        path.startsWith("/settings");
-  const isClientPortal = path.startsWith("/client");
+  const isClientPortal = path === "/client" || path.startsWith("/client/");
   const isProtected = isPlatform || isAgencyDash || isClientPortal;
 
   if (!user && isProtected) {
