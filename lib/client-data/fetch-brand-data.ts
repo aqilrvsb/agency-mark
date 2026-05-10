@@ -51,6 +51,10 @@ export async function loadBrandLevelData(opts: {
       deltas: null,
       daily: [] as DailyPoint[],
       priorDaily: [] as DailyPoint[],
+      dailySpendOnly: [] as { date: string; value: number }[],
+      dailyClicks: [] as { date: string; value: number }[],
+      spendByAccount: [] as { key: string; label: string; value: number }[],
+      clicksByAccount: [] as { key: string; label: string; value: number }[],
       annotations: [] as { id: string; anchor_date: string; body: string; created_at: string; author_name: string | null }[],
       range: null,
       adAccountOptions: [] as { platform: string; platformAdAccountId: string; adAccountName: string | null; currency: string | null }[],
@@ -128,13 +132,23 @@ export async function loadBrandLevelData(opts: {
   // brand_platform_ad_accounts cache.
   const accountNameById = new Map(adAccountOptions.map((a) => [a.platformAdAccountId, a.adAccountName ?? a.platformAdAccountId]));
   const spendByAccountMap = new Map<string, number>();
+  const clicksByAccountMap = new Map<string, number>();
   for (const r of (currData ?? []) as Array<RawRow & { platform_ad_account_id?: string | null }>) {
     const acct = (r.platform_ad_account_id as string | null) ?? "unknown";
     const d = (r.data as Record<string, unknown>) ?? {};
     const spend = Number(d.spend ?? d.cost ?? 0);
+    const clicks = Number(d.clicks ?? d.link_clicks ?? d.inline_link_clicks ?? d.outbound_clicks ?? 0);
     spendByAccountMap.set(acct, (spendByAccountMap.get(acct) ?? 0) + spend);
+    clicksByAccountMap.set(acct, (clicksByAccountMap.get(acct) ?? 0) + clicks);
   }
   const spendByAccount = [...spendByAccountMap.entries()]
+    .map(([key, value]) => ({
+      key,
+      label: accountNameById.get(key) ?? key,
+      value,
+    }))
+    .sort((a, b) => b.value - a.value);
+  const clicksByAccount = [...clicksByAccountMap.entries()]
     .map(([key, value]) => ({
       key,
       label: accountNameById.get(key) ?? key,
@@ -154,7 +168,20 @@ export async function loadBrandLevelData(opts: {
       .map(([date, value]) => ({ date, value }))
       .sort((a, b) => a.date.localeCompare(b.date));
   };
+  const buildDailyClicks = (rs: typeof currData) => {
+    const m = new Map<string, number>();
+    for (const r of rs ?? []) {
+      const d = (r.data as Record<string, unknown>) ?? {};
+      const date = r.date_start as string;
+      const clicks = Number(d.clicks ?? d.link_clicks ?? d.inline_link_clicks ?? d.outbound_clicks ?? 0);
+      m.set(date, (m.get(date) ?? 0) + clicks);
+    }
+    return [...m.entries()]
+      .map(([date, value]) => ({ date, value }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  };
   const dailySpendOnly = buildDailySpend(currData);
+  const dailyClicks = buildDailyClicks(currData);
 
   // Daily series for chart
   const buildDaily = (rows: typeof currData): DailyPoint[] => {
@@ -208,7 +235,9 @@ export async function loadBrandLevelData(opts: {
     daily,
     priorDaily,
     dailySpendOnly,
+    dailyClicks,
     spendByAccount,
+    clicksByAccount,
     annotations: annotationItems,
     range: { start: startIso, end: endIso, days },
     adAccountOptions,

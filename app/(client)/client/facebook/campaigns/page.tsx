@@ -1,7 +1,7 @@
 import { requireClient } from "@/lib/auth/guards";
 import { loadBrandLevelData } from "@/lib/client-data/fetch-brand-data";
 import { parseDateRange } from "@/lib/client-data/aggregate";
-import { PlatformPageTemplate } from "@/components/client/platform-page-template";
+import { FacebookAATemplate } from "@/components/client/facebook-aa-template";
 
 export const dynamic = "force-dynamic";
 
@@ -24,22 +24,17 @@ export default async function FacebookCampaignsPage({
   });
 
   return (
-    <PlatformPageTemplate
-      platformLabel="Facebook Ads"
-      platformAccent="text-blue-300"
+    <FacebookAATemplate
       level="campaign"
       brandName={data.brand?.name}
       range={data.range}
       totals={data.totals}
-      deltas={data.deltas}
       daily={data.daily}
-      priorDaily={data.priorDaily}
+      dailyClicks={data.dailyClicks}
       rows={data.rows}
-      annotations={data.annotations}
       brandId={data.brand?.id}
       adAccountOptions={data.adAccountOptions}
-      dailySpendOnly={data.dailySpendOnly}
-      spendByAccount={data.spendByAccount}
+      clicksByAccount={data.clicksByAccount}
     />
   );
 }

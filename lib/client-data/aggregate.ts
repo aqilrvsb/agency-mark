@@ -24,6 +24,10 @@ export interface AggregateRow {
   // Creative — populated for ad-level aggregation; null for campaign/adset.
   creativeThumbnail: string | null;
   creativeBody: string | null;
+  // Parent context — populated for nested levels so the data table can
+  // render CAMPAIGN / AD SET columns alongside the row's own name.
+  campaignName: string | null;
+  adsetName: string | null;
 }
 
 interface AdDataRow {
@@ -98,6 +102,8 @@ export function aggregateAdData(rows: AdDataRow[], level: AdLevel): AggregateRow
       videoViews: 0,
       creativeThumbnail: null as string | null,
       creativeBody: null as string | null,
+      campaignName: null as string | null,
+      adsetName: null as string | null,
       _reachUnion: new Set<string>(),
       _denomDays: 0,
     };
@@ -110,6 +116,19 @@ export function aggregateAdData(rows: AdDataRow[], level: AdLevel): AggregateRow
       }
       if (!existing.creativeBody) {
         existing.creativeBody = pickString(d, ["creative_body", "ad_copy", "body"]);
+      }
+    }
+
+    // Capture parent context for nested levels (used by data tables that
+    // render CAMPAIGN / AD SET columns alongside the row's own name)
+    if (level === "adset" || level === "ad") {
+      if (!existing.campaignName) {
+        existing.campaignName = pickString(d, ["campaign_name", "campaign"]);
+      }
+    }
+    if (level === "ad") {
+      if (!existing.adsetName) {
+        existing.adsetName = pickString(d, ["adset_name", "ad_set_name", "adgroup_name", "ad_group_name"]);
       }
     }
 
