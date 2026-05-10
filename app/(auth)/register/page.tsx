@@ -45,7 +45,7 @@ export default function RegisterPage() {
       return;
     }
 
-    router.replace("/marketer/onboarding");
+    router.replace("/marketer/templates");
   }
 
   if (success) {
