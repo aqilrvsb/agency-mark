@@ -1,10 +1,7 @@
 import { requireClient } from "@/lib/auth/guards";
-import { Card, CardTitle, CardDescription, CardHeader } from "@/components/ui/card";
-import { MetricsTable, MetricsSummary } from "@/components/client/metrics-table";
-import { DateRangePicker } from "@/components/client/date-range-picker";
 import { loadBrandLevelData } from "@/lib/client-data/fetch-brand-data";
 import { parseDateRange } from "@/lib/client-data/aggregate";
-import { Megaphone } from "lucide-react";
+import { PlatformPageTemplate } from "@/components/client/platform-page-template";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +13,7 @@ export default async function FacebookCampaignsPage({
   const params = await searchParams;
   const { start, end } = parseDateRange(params);
   const user = await requireClient();
-  const { brand, rows, totals } = await loadBrandLevelData({
+  const data = await loadBrandLevelData({
     userId: user.id,
     platforms: ["meta_ads", "meta"],
     level: "campaign",
@@ -25,25 +22,17 @@ export default async function FacebookCampaignsPage({
   });
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <header className="mb-6">
-        <div className="text-xs uppercase tracking-widest text-blue-300 font-bold mb-2">Facebook Ads</div>
-        <h1 className="font-display font-extrabold text-4xl mb-2">Campaigns</h1>
-        <p className="text-[var(--color-text-secondary)]">
-          {brand?.name ? `${brand.name}'s ` : ""}paid Meta campaigns from {start} to {end}.
-        </p>
-      </header>
-
-      <div className="mb-6"><DateRangePicker /></div>
-      {totals && <MetricsSummary {...totals} />}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Megaphone className="w-5 h-5" /> All campaigns</CardTitle>
-          <CardDescription>Ranked by spend.</CardDescription>
-        </CardHeader>
-        <MetricsTable rows={rows} nameLabel="Campaign" />
-      </Card>
-    </div>
+    <PlatformPageTemplate
+      platformLabel="Facebook Ads"
+      platformAccent="text-blue-300"
+      level="campaign"
+      brandName={data.brand?.name}
+      range={data.range}
+      totals={data.totals}
+      deltas={data.deltas}
+      daily={data.daily}
+      priorDaily={data.priorDaily}
+      rows={data.rows}
+    />
   );
 }
