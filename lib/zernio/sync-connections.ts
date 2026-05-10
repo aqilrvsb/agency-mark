@@ -4,22 +4,29 @@ import { getZernio } from "./client";
 /**
  * Map a Zernio SocialAccount.platform value to our internal platform code.
  *
- * After /v1/connect/{platform}/ads, Zernio creates a dedicated ads SocialAccount
- * with platform values: metaads / tiktokads / googleads / linkedinads / pinterestads / xads.
+ * After /v1/connect/{platform}/ads, Zernio normally creates a dedicated ads
+ * SocialAccount with platform values: metaads / tiktokads / googleads /
+ * linkedinads / pinterestads / xads. We register those.
  *
- * The earlier organic-only OAuth created posting SocialAccounts with values
- * like "facebook" / "instagram" / "tiktok" — we keep those mappings for
- * back-compat with brands that connected before the ads endpoint was wired.
+ * Same-token edge case (Meta on free tier): when /v1/connect/facebook/ads
+ * returns alreadyConnected:true and Zernio's account cap blocks creating
+ * a separate `metaads` row, the organic `facebook` account ends up
+ * carrying `adsStatus: "connected"` with the full ads_management /
+ * ads_read scopes. listAdAccounts(<facebook _id>) returns the Meta ad
+ * accounts just fine — so we register that organic account as meta_ads
+ * for sync purposes. Same idea would apply to instagram if/when we wire it.
  */
-// Only the ADS-side SocialAccounts (created by /v1/connect/{platform}/ads)
-// get tracked in brand_ad_accounts. The organic posting SocialAccounts
-// (facebook / instagram / tiktok with no /ads suffix) stay in Zernio but
-// we don't persist them locally — they don't grant ad-data access and
-// listing them here just creates duplicate rows in the connections UI.
 const ZERNIO_TO_INTERNAL: Record<string, string> = {
   metaads: "meta_ads",
   tiktokads: "tiktok_ads",
   googleads: "google_ads",
+};
+
+// Organic platforms whose SocialAccount can carry ads scope (same-token).
+// Mapped only when `adsStatus === "connected"` on that account.
+const SAME_TOKEN_TO_INTERNAL: Record<string, string> = {
+  facebook: "meta_ads",
+  instagram: "meta_ads",
 };
 
 export async function syncBrandConnections(brandId: string): Promise<{ synced: number; skipped: number }> {
@@ -38,7 +45,10 @@ export async function syncBrandConnections(brandId: string): Promise<{ synced: n
   let synced = 0;
   let skipped = 0;
   for (const acc of accounts) {
-    const platform = ZERNIO_TO_INTERNAL[acc.platform as string];
+    let platform = ZERNIO_TO_INTERNAL[acc.platform as string];
+    if (!platform && acc.adsStatus === "connected") {
+      platform = SAME_TOKEN_TO_INTERNAL[acc.platform as string];
+    }
     if (!platform) {
       skipped++;
       continue;

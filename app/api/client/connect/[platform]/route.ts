@@ -149,8 +149,39 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
 
     return NextResponse.json({ error: "Unexpected Zernio response" }, { status: 500 });
   } catch (e) {
-    return NextResponse.json({
-      error: e instanceof Error ? e.message : "Zernio connect failed",
-    }, { status: 500 });
+    // Free-tier same-token recovery: when Zernio's account cap blocks
+    // creating a separate metaads SocialAccount, the existing organic
+    // facebook/instagram account in the brand's profile already carries
+    // adsStatus="connected" with full ads scopes. Skip the connect call
+    // and reconcile directly against listAccounts — sync-connections.ts
+    // recognises same-token accounts.
+    const msg = e instanceof Error ? e.message : "Zernio connect failed";
+    const looksLikePaywall =
+      msg.includes("402") ||
+      msg.toUpperCase().includes("PAYMENT_REQUIRED") ||
+      msg.toLowerCase().includes("payment method");
+    if (looksLikePaywall && (platform === "facebook")) {
+      try {
+        const accounts = await zernio.listAccounts({ profileId });
+        const sameToken = accounts.find(
+          (a) => (a.platform === "facebook" || a.platform === "instagram") &&
+                 a.adsStatus === "connected"
+        );
+        if (sameToken) {
+          await syncBrandConnections(brand.id as string);
+          return NextResponse.json({
+            alreadyConnected: true,
+            accountId: sameToken._id,
+            platform: sameToken.platform,
+            redirect: redirectUrl,
+            profileId,
+            recoveredFromPaywall: true,
+          });
+        }
+      } catch {
+        // fall through to error
+      }
+    }
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
