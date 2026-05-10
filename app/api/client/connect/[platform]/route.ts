@@ -2,32 +2,35 @@ import { NextResponse } from "next/server";
 import { requireClient } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getZernio, type ZernioPlatform } from "@/lib/zernio/client";
+import { getZernio } from "@/lib/zernio/client";
+import { syncBrandConnections } from "@/lib/zernio/sync-connections";
 
-// URL platform slug → Zernio platform enum (in their /connect path)
-// Google Ads is NOT connectable via Zernio's OAuth — they only support
-// facebook/instagram/tiktok/linkedin/twitter/pinterest/youtube. The agency
-// has to attach Google Ads separately via Zernio's dashboard.
-const ZERNIO_PLATFORM: Record<string, ZernioPlatform> = {
+// URL platform slug → Zernio /connect/{platform}/ads value
+// Same-token platforms (facebook, instagram, linkedin, pinterest) re-use the
+// parent posting account's OAuth token; if the user already connected the Page
+// with broad enough scope, this resolves to alreadyConnected with NO new OAuth.
+// Separate-token (tiktok, twitter) and standalone (googleads) always return an
+// authUrl for the platform-specific marketing-API OAuth.
+const ZERNIO_ADS_SLUG: Record<string, "facebook" | "instagram" | "linkedin" | "tiktok" | "twitter" | "pinterest" | "googleads"> = {
   facebook: "facebook",
   tiktok: "tiktok",
+  google: "googleads",
 };
 
-// URL platform slug → our internal platform value (matches DB CHECK)
+// URL platform slug → our internal platform value (matches DB CHECK + sync)
 const INTERNAL_PLATFORM: Record<string, string> = {
   facebook: "meta_ads",
   tiktok: "tiktok_ads",
+  google: "google_ads",
 };
 
 export async function POST(req: Request, ctx: { params: Promise<{ platform: string }> }) {
   const { platform } = await ctx.params;
-  if (!INTERNAL_PLATFORM[platform]) {
+  const adsSlug = ZERNIO_ADS_SLUG[platform];
+  if (!adsSlug || !INTERNAL_PLATFORM[platform]) {
     return NextResponse.json({ error: "Unsupported platform" }, { status: 400 });
   }
 
-  // Build the post-OAuth redirect target so Zernio sends users back to
-  // AdSolution instead of zernio.com/dashboard. We derive the host from
-  // the incoming request to support all environments (production + previews).
   const origin = new URL(req.url).origin;
   const redirectUrl = `${origin}/client/connections?ok=1&platform=${platform}`;
 
@@ -46,8 +49,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
 
   const zernio = getZernio();
 
-  // Ensure a Zernio profile exists for this brand. Profile = workspace-like
-  // grouping that owns the connected social accounts. One per brand.
+  // Auto-provision a Zernio Profile for this brand. One profile per brand —
+  // holds every connected SocialAccount across every platform.
   let profileId = brand.zernio_profile_id as string | null;
   if (!profileId) {
     try {
@@ -63,7 +66,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
         .eq("id", brand.id as string);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to create Zernio profile";
-      // If the profile already exists upstream, try to find it.
       if (msg.includes("already exists")) {
         const { profiles } = await zernio.listProfiles();
         const match = profiles.find((p) => p.name === `${brand.name} (AdSolution)`);
@@ -82,14 +84,43 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
     }
   }
 
-  // Get the OAuth URL from Zernio
+  // Connect ADS specifically. /v1/connect/{platform}/ads is the only endpoint
+  // that grants ad-data access — the regular /v1/connect/{platform} only
+  // connects the Page/Profile and ads queries return empty.
   try {
-    const { authUrl } = await zernio.getConnectUrl({
-      platform: ZERNIO_PLATFORM[platform],
+    const result = await zernio.getAdsConnectUrl({
+      platform: adsSlug,
       profileId,
       redirectUrl,
     });
-    return NextResponse.json({ authUrl, profileId });
+
+    // Same-token shortcut (Meta / IG / LinkedIn / Pinterest) when the parent
+    // Page token already has ads scope: ads SocialAccount is created
+    // instantly with no OAuth round-trip.
+    if ("alreadyConnected" in result && result.alreadyConnected) {
+      // Reconcile the new metaads / linkedinads / pinterestads SocialAccount
+      // into our brand_ad_accounts + brand_platform_ad_accounts tables.
+      try {
+        await syncBrandConnections(brand.id as string);
+      } catch {
+        // best-effort
+      }
+      return NextResponse.json({
+        alreadyConnected: true,
+        accountId: result.accountId,
+        platform: result.platform,
+        redirect: redirectUrl,
+        profileId,
+      });
+    }
+
+    // OAuth flow path — return the authUrl so the frontend redirects to
+    // Meta/TikTok/Google's consent screen.
+    if ("authUrl" in result) {
+      return NextResponse.json({ authUrl: result.authUrl, profileId });
+    }
+
+    return NextResponse.json({ error: "Unexpected Zernio response" }, { status: 500 });
   } catch (e) {
     return NextResponse.json({
       error: e instanceof Error ? e.message : "Zernio connect failed",

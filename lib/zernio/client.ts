@@ -288,10 +288,10 @@ export class ZernioClient {
   /**
    * Build an OAuth URL the user is redirected to in order to connect a new
    * social account. Zernio expects:
-   *   GET /connect/{platform}?profileId={profileId}&redirectUrl={url}
-   * If redirectUrl is provided, Zernio bakes it into the state so after the
-   * user picks an account they bounce back to that URL instead of the Zernio
-   * dashboard.
+   *   GET /connect/{platform}?profileId={profileId}&redirect_url={url}
+   *
+   * NOTE: this endpoint connects the POSTING / organic side (Page, Profile).
+   * It does NOT grant ads access. For ad data, call getAdsConnectUrl below.
    */
   async getConnectUrl(params: {
     platform: ZernioPlatform;
@@ -299,8 +299,54 @@ export class ZernioClient {
     redirectUrl?: string;
   }): Promise<{ authUrl: string }> {
     const qs = new URLSearchParams({ profileId: params.profileId });
-    if (params.redirectUrl) qs.set("redirectUrl", params.redirectUrl);
+    if (params.redirectUrl) {
+      qs.set("redirect_url", params.redirectUrl);
+      qs.set("redirectUrl", params.redirectUrl); // belt-and-braces; Zernio has accepted both
+    }
     return this.request<{ authUrl: string }>(`/connect/${params.platform}?${qs.toString()}`);
+  }
+
+  /**
+   * Connect ADS for a platform — the actual endpoint that grants ad-data access.
+   *   GET /v1/connect/{platform}/ads
+   *
+   * Per Zernio's spec:
+   *  - Same-token platforms (facebook, instagram, linkedin, pinterest) copy the
+   *    OAuth token from the existing organic SocialAccount and create an ads
+   *    SocialAccount with values metaads / linkedinads / pinterestads. If the
+   *    parent token already has ads scope, the response is { alreadyConnected,
+   *    accountId } with no OAuth round-trip.
+   *  - Separate-token platforms (tiktok, twitter) return an authUrl pointing at
+   *    that platform's marketing-API OAuth, which on completion creates a
+   *    tiktokads / xads SocialAccount.
+   *  - Standalone platforms (googleads) return an authUrl pointing at Google's
+   *    Ads OAuth and create a googleads SocialAccount.
+   *
+   * Optional adAccountId / adAccountIds (Meta only) scope the resulting sync
+   * to a single (or set of) Meta Ad Accounts (act_*).
+   */
+  async getAdsConnectUrl(params: {
+    platform: "facebook" | "instagram" | "linkedin" | "tiktok" | "twitter" | "pinterest" | "googleads";
+    profileId: string;
+    accountId?: string;            // existing parent SocialAccount ID (req for twitter, optional for tiktok)
+    redirectUrl?: string;
+    adAccountId?: string;          // metaads only (e.g. act_1234567890)
+    adAccountIds?: string[];       // metaads only — multiple
+  }): Promise<
+    | { alreadyConnected: true; accountId: string; platform: string; username?: string; displayName?: string; scopedAdAccountIds?: string[] }
+    | { authUrl: string; state?: string }
+  > {
+    const qs = new URLSearchParams({ profileId: params.profileId });
+    if (params.accountId) qs.set("accountId", params.accountId);
+    if (params.redirectUrl) {
+      qs.set("redirect_url", params.redirectUrl);
+      qs.set("redirectUrl", params.redirectUrl);
+    }
+    if (params.adAccountId) qs.set("adAccountId", params.adAccountId);
+    if (params.adAccountIds && params.adAccountIds.length > 0) {
+      for (const a of params.adAccountIds) qs.append("adAccountIds", a);
+    }
+    return this.request(`/connect/${params.platform}/ads?${qs.toString()}`);
   }
 
   /**

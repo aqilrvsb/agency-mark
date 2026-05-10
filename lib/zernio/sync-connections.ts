@@ -1,7 +1,22 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getZernio, type ZernioPlatform } from "./client";
+import { getZernio } from "./client";
 
+/**
+ * Map a Zernio SocialAccount.platform value to our internal platform code.
+ *
+ * After /v1/connect/{platform}/ads, Zernio creates a dedicated ads SocialAccount
+ * with platform values: metaads / tiktokads / googleads / linkedinads / pinterestads / xads.
+ *
+ * The earlier organic-only OAuth created posting SocialAccounts with values
+ * like "facebook" / "instagram" / "tiktok" — we keep those mappings for
+ * back-compat with brands that connected before the ads endpoint was wired.
+ */
 const ZERNIO_TO_INTERNAL: Record<string, string> = {
+  // Ads SocialAccounts (post /v1/connect/{platform}/ads)
+  metaads: "meta_ads",
+  tiktokads: "tiktok_ads",
+  googleads: "google_ads",
+  // Organic SocialAccounts — kept for legacy/back-compat
   facebook: "meta_ads",
   instagram: "meta_ads",
   tiktok: "tiktok_ads",
@@ -23,7 +38,7 @@ export async function syncBrandConnections(brandId: string): Promise<{ synced: n
   let synced = 0;
   let skipped = 0;
   for (const acc of accounts) {
-    const platform = ZERNIO_TO_INTERNAL[acc.platform as ZernioPlatform];
+    const platform = ZERNIO_TO_INTERNAL[acc.platform as string];
     if (!platform) {
       skipped++;
       continue;

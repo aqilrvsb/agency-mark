@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Local IDE / workspace
 *.code-workspace
+
+# Zernio openapi spec (downloaded reference, regenerated as needed)
+.zernio-openapi.yaml
