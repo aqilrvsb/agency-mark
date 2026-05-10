@@ -103,7 +103,7 @@ export function AdAccountFilter({ accounts }: { accounts: AdAccountOption[] }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[320px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] shadow-xl z-30 overflow-hidden">
+        <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-[320px] max-w-[calc(100vw-2rem)] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] shadow-xl z-30 overflow-hidden">
           <div className="px-3 py-2 border-b border-[var(--color-border)] flex items-center justify-between">
             <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-bold">
               {accounts.length} ad account{accounts.length === 1 ? "" : "s"}
