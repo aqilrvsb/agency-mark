@@ -42,11 +42,35 @@ export async function syncBrandConnections(brandId: string): Promise<{ synced: n
   const zernio = getZernio();
   const accounts = await zernio.listAccounts({ profileId: brand.zernio_profile_id as string });
 
+  // Dedup pass 1: find every parent SocialAccount that already has a dedicated
+  // ads-side child (metaads/tiktokads/googleads). When such a child exists, the
+  // parent's same-token fallback is redundant — we skip it so the brand only
+  // gets ONE row per logical Page in brand_ad_accounts.
+  const adsParents = new Set<string>();
+  for (const acc of accounts) {
+    if (ZERNIO_TO_INTERNAL[acc.platform as string]) {
+      const parent = (acc as { parentAccountId?: string }).parentAccountId;
+      if (parent) adsParents.add(parent);
+    }
+  }
+
+  // Track the SocialAccount ids we end up registering, so we can deactivate
+  // any rows in brand_ad_accounts that point to accounts that are no longer
+  // active in Zernio (cleans up the stale facebook same-token row when a
+  // metaads gets added later).
+  const registeredIds = new Set<string>();
+
   let synced = 0;
   let skipped = 0;
   for (const acc of accounts) {
     let platform = ZERNIO_TO_INTERNAL[acc.platform as string];
     if (!platform && acc.adsStatus === "connected") {
+      // Skip the same-token fallback if a dedicated ads child already covers
+      // this parent — avoids the "two cards for the same Page" duplicate.
+      if (adsParents.has(acc._id)) {
+        skipped++;
+        continue;
+      }
       platform = SAME_TOKEN_TO_INTERNAL[acc.platform as string];
     }
     if (!platform) {
@@ -56,6 +80,8 @@ export async function syncBrandConnections(brandId: string): Promise<{ synced: n
     const externalId = acc._id;
     const externalName = acc.displayName ?? acc.username ?? acc.metadata?.selectedPageName ?? null;
     const isActive = acc.enabled !== false && acc.isActive !== false && acc.platformStatus !== "disconnected";
+
+    registeredIds.add(externalId);
 
     const { data: existing } = await admin
       .from("brand_ad_accounts")
@@ -81,6 +107,33 @@ export async function syncBrandConnections(brandId: string): Promise<{ synced: n
       });
     }
     synced++;
+  }
+
+  // Dedup pass 2: any existing brand_ad_accounts row whose external_account_id
+  // is NOT in registeredIds (e.g. the stale same-token row that the new dedup
+  // skipped) gets deleted along with its dependent brand_platform_ad_accounts.
+  // We only consider Meta-shaped rows here so we don't accidentally nuke
+  // TikTok/Google rows when this runs for a Meta reconnect.
+  const { data: existingRows } = await admin
+    .from("brand_ad_accounts")
+    .select("id, external_account_id")
+    .eq("brand_id", brand.id as string)
+    .eq("platform", "meta_ads");
+
+  for (const row of existingRows ?? []) {
+    const extId = row.external_account_id as string;
+    if (!registeredIds.has(extId)) {
+      // Drop the platform_ad_accounts that referenced this stale Social Account
+      await admin
+        .from("brand_platform_ad_accounts")
+        .delete()
+        .eq("brand_id", brand.id as string)
+        .eq("social_account_id", extId);
+      await admin
+        .from("brand_ad_accounts")
+        .delete()
+        .eq("id", row.id as string);
+    }
   }
 
   return { synced, skipped };
