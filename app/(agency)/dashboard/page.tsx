@@ -1,10 +1,12 @@
 import { requireAgencyStaff } from "@/lib/auth/guards";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Plus, Users, Megaphone, BarChart3, CreditCard, AlertTriangle } from "lucide-react";
 import { loadDashboardData } from "@/lib/agency-data/dashboard-data";
 import { AgencyHeroStrip } from "@/components/agency/agency-hero-strip";
 import { ClientTile } from "@/components/agency/client-tile";
+import { ClientSearch } from "@/components/agency/client-search";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,14 @@ export default async function DashboardOverviewPage() {
   }
 
   const data = await loadDashboardData({ companyId: user.company_id });
+
+  // First-run: BOD/Leader with zero brands sees onboarding instead.
+  if (
+    data.totals.totalBrands === 0 &&
+    (user.role === "bod" || user.role === "leader")
+  ) {
+    redirect("/welcome");
+  }
 
   const heroTiles = [
     {
@@ -62,7 +72,7 @@ export default async function DashboardOverviewPage() {
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       <header className="mb-6 flex items-start justify-between flex-wrap gap-4">
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="font-display font-extrabold text-3xl lg:text-4xl mb-1">
             Welcome back, {user.full_name.split(" ")[0]}
           </h1>
@@ -70,12 +80,15 @@ export default async function DashboardOverviewPage() {
             {data.totals.activeBrands} of {data.totals.totalBrands} brands active · {data.range.start} → {data.range.end}
           </p>
         </div>
-        <Link
-          href="/clients/new"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold bg-[var(--color-orange)] text-[#0a0a0a] hover:bg-[var(--color-orange-hover)] transition"
-        >
-          <Plus className="w-4 h-4" /> Add client
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ClientSearch />
+          <Link
+            href="/clients/new"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold bg-[var(--color-orange)] text-[#0a0a0a] hover:bg-[var(--color-orange-hover)] transition whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" /> Add client
+          </Link>
+        </div>
       </header>
 
       {(data.unreadAlerts > 0 || data.recentAlerts.length > 0) && (

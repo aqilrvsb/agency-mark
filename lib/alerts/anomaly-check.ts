@@ -1,9 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendWhatsApp } from "@/lib/whatsapp/send";
 
 interface AnomalyResult {
   brandsScanned: number;
   alertsCreated: number;
   notificationsCreated: number;
+  whatsappSent: number;
   errors: string[];
 }
 
@@ -22,6 +24,7 @@ export async function runAnomalyCheck(): Promise<AnomalyResult> {
   const errors: string[] = [];
   let alertsCreated = 0;
   let notificationsCreated = 0;
+  let whatsappSent = 0;
 
   const today = new Date();
   const todayIso = today.toISOString().slice(0, 10);
@@ -69,13 +72,22 @@ export async function runAnomalyCheck(): Promise<AnomalyResult> {
   const companyIds = [...new Set(brands.map((b) => b.company_id as string))];
   const { data: staffUsers } = await admin
     .from("users")
-    .select("id, company_id, role")
+    .select("id, company_id, role, full_name, whatsapp_number")
     .in("company_id", companyIds)
     .in("role", ["bod", "leader"]);
-  const staffByCompany = new Map<string, string[]>();
+  interface StaffMember {
+    id: string;
+    name: string | null;
+    whatsapp: string | null;
+  }
+  const staffByCompany = new Map<string, StaffMember[]>();
   for (const u of staffUsers ?? []) {
     const list = staffByCompany.get(u.company_id as string) ?? [];
-    list.push(u.id as string);
+    list.push({
+      id: u.id as string,
+      name: (u.full_name as string) ?? null,
+      whatsapp: (u.whatsapp_number as string) ?? null,
+    });
     staffByCompany.set(u.company_id as string, list);
   }
 
@@ -168,11 +180,11 @@ export async function runAnomalyCheck(): Promise<AnomalyResult> {
       }
       alertsCreated++;
 
-      // Fan-out to BOD/Leader notifications
+      // Fan-out to BOD/Leader notifications + WhatsApp (if configured)
       const staff = staffByCompany.get(companyId) ?? [];
       if (staff.length > 0) {
-        const notifs = staff.map((uid) => ({
-          user_id: uid,
+        const notifs = staff.map((s) => ({
+          user_id: s.id,
           type: "alert",
           title: `${t.severity === "critical" ? "🚨" : "⚠️"} ${brand.name as string}`,
           message: t.message,
@@ -185,9 +197,24 @@ export async function runAnomalyCheck(): Promise<AnomalyResult> {
         } else {
           notificationsCreated += notifs.length;
         }
+
+        // WhatsApp blast — only on critical severity to avoid alert fatigue
+        if (t.severity === "critical") {
+          for (const s of staff) {
+            if (!s.whatsapp) continue;
+            const result = await sendWhatsApp({
+              to: s.whatsapp,
+              body: `🚨 *${brand.name as string}* alert:\n\n${t.message}\n\nView: https://agency-mark.vercel.app/clients/${id}`,
+            });
+            if (result.ok) whatsappSent++;
+            else if (!result.skipped && result.error) {
+              errors.push(`whatsapp ${s.id}: ${result.error}`);
+            }
+          }
+        }
       }
     }
   }
 
-  return { brandsScanned: brands.length, alertsCreated, notificationsCreated, errors };
+  return { brandsScanned: brands.length, alertsCreated, notificationsCreated, whatsappSent, errors };
 }
