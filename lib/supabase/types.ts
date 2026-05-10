@@ -553,6 +553,7 @@ export type Database = {
           is_active: boolean | null
           logo_url: string | null
           name: string
+          owner_user_id: string | null
           updated_at: string | null
           zernio_profile_id: string | null
         }
@@ -566,6 +567,7 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name: string
+          owner_user_id?: string | null
           updated_at?: string | null
           zernio_profile_id?: string | null
         }
@@ -579,6 +581,7 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name?: string
+          owner_user_id?: string | null
           updated_at?: string | null
           zernio_profile_id?: string | null
         }
@@ -744,6 +747,7 @@ export type Database = {
           is_active: boolean | null
           logo_url: string | null
           name: string
+          owner_user_id: string | null
           prefix: string | null
           updated_at: string | null
         }
@@ -753,6 +757,7 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name: string
+          owner_user_id?: string | null
           prefix?: string | null
           updated_at?: string | null
         }
@@ -762,6 +767,7 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name?: string
+          owner_user_id?: string | null
           prefix?: string | null
           updated_at?: string | null
         }
