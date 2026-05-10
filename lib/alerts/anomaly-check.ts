@@ -42,7 +42,7 @@ export async function runAnomalyCheck(): Promise<AnomalyResult> {
     .eq("is_active", true);
 
   if (!brands || brands.length === 0) {
-    return { brandsScanned: 0, alertsCreated: 0, notificationsCreated: 0, errors: [] };
+    return { brandsScanned: 0, alertsCreated: 0, notificationsCreated: 0, whatsappSent: 0, errors: [] };
   }
 
   // Bulk-fetch ad_data for last 7 days

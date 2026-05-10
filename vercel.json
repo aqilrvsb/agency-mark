@@ -9,6 +9,10 @@
     {
       "path": "/api/cron/anomaly-check",
       "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/whatsapp-daily-digest",
+      "schedule": "5 1 * * *"
     }
   ]
 }
