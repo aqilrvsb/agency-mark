@@ -29,6 +29,8 @@ export default async function GoogleCampaignsPage({
       brandName={data.brand?.name}
       range={data.range}
       totals={data.totals}
+      priorTotals={data.priorTotals}
+      deltas={data.deltas}
       daily={data.daily}
       dailyClicks={data.dailyClicks}
       rows={data.rows}

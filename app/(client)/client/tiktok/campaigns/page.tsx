@@ -29,6 +29,8 @@ export default async function TikTokCampaignsPage({
       brandName={data.brand?.name}
       range={data.range}
       totals={data.totals}
+      priorTotals={data.priorTotals}
+      deltas={data.deltas}
       daily={data.daily}
       dailyImpressions={data.dailyImpressions}
       rows={data.rows}
