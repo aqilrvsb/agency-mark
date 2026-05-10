@@ -11,15 +11,15 @@ import { getZernio } from "./client";
  * like "facebook" / "instagram" / "tiktok" — we keep those mappings for
  * back-compat with brands that connected before the ads endpoint was wired.
  */
+// Only the ADS-side SocialAccounts (created by /v1/connect/{platform}/ads)
+// get tracked in brand_ad_accounts. The organic posting SocialAccounts
+// (facebook / instagram / tiktok with no /ads suffix) stay in Zernio but
+// we don't persist them locally — they don't grant ad-data access and
+// listing them here just creates duplicate rows in the connections UI.
 const ZERNIO_TO_INTERNAL: Record<string, string> = {
-  // Ads SocialAccounts (post /v1/connect/{platform}/ads)
   metaads: "meta_ads",
   tiktokads: "tiktok_ads",
   googleads: "google_ads",
-  // Organic SocialAccounts — kept for legacy/back-compat
-  facebook: "meta_ads",
-  instagram: "meta_ads",
-  tiktok: "tiktok_ads",
 };
 
 export async function syncBrandConnections(brandId: string): Promise<{ synced: number; skipped: number }> {
