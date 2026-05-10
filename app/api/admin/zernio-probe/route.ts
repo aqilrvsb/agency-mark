@@ -2,14 +2,13 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * One-off diagnostic. Hits Zernio /v1/ads/accounts then /v1/ads with the
- * connected social account for the given brand and dumps the raw JSON
- * shape so we can confirm field names, ID formats, and response wrappers.
+ * Diagnostic. For each connected social account on a brand, walks every
+ * Meta Ad Account and queries /v1/ads, /v1/ads/campaigns, /v1/ads/tree
+ * over a wide date range (default 365 days) so we can confirm whether
+ * the connected accounts have ANY historical data — campaigns, ad sets,
+ * or ads.
  *
- * GET /api/admin/zernio-probe?brand_id=<uuid>
- * Auth: Authorization: Bearer ${CRON_SECRET}
- *
- * Safe to delete once the real sync is in place.
+ * GET /api/admin/zernio-probe?brand_id=<uuid>&days=365
  */
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization");
@@ -19,7 +18,7 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const brandId = url.searchParams.get("brand_id");
-  const adAccountIdParam = url.searchParams.get("ad_account_id");
+  const days = Math.min(730, Math.max(7, Number(url.searchParams.get("days") ?? 365)));
   if (!brandId) return NextResponse.json({ error: "brand_id required" }, { status: 400 });
 
   const apiKey = process.env.ZERNIO_API_KEY;
@@ -36,70 +35,95 @@ export async function GET(req: Request) {
   }
 
   const base = "https://zernio.com/api/v1";
-  const out: Record<string, unknown>[] = [];
+  const today = new Date().toISOString().slice(0, 10);
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  const fromDate = startDate.toISOString().slice(0, 10);
+
+  const probes: Record<string, unknown>[] = [];
 
   for (const acc of accounts) {
     const socialAccountId = acc.external_account_id as string;
-    const probe: Record<string, unknown> = {
+    const socialProbe: Record<string, unknown> = {
       socialAccountId,
       socialAccountName: acc.external_account_name,
       ourPlatform: acc.platform,
+      window: { fromDate, toDate: today, days },
+      adAccounts: [] as unknown[],
     };
 
-    // 1. /v1/ads/accounts → list platform Ad Accounts under this social account
+    // /v1/ads/accounts
+    let discoveredAdAccounts: { id: string; name: string; currency?: string }[] = [];
     try {
       const r = await fetch(`${base}/ads/accounts?accountId=${encodeURIComponent(socialAccountId)}`, {
         headers: { Authorization: `Bearer ${apiKey}` },
       });
-      probe.adAccountsStatus = r.status;
-      probe.adAccountsBody = await r.json().catch(() => ({}));
+      socialProbe.adAccountsStatus = r.status;
+      const body = (await r.json().catch(() => ({}))) as { accounts?: { id: string; name: string; currency?: string }[] };
+      discoveredAdAccounts = body.accounts ?? [];
+      socialProbe.adAccountsCount = discoveredAdAccounts.length;
     } catch (e) {
-      probe.adAccountsError = e instanceof Error ? e.message : String(e);
+      socialProbe.adAccountsError = e instanceof Error ? e.message : String(e);
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const start = new Date(); start.setDate(start.getDate() - 90);
-    const fromDate = start.toISOString().slice(0, 10);
+    // For each discovered Meta Ad Account, probe ads / campaigns / tree
+    const adAccountProbes: Record<string, unknown>[] = [];
+    for (const adAcc of discoveredAdAccounts) {
+      const adProbe: Record<string, unknown> = {
+        adAccountId: adAcc.id,
+        adAccountName: adAcc.name,
+        currency: adAcc.currency,
+      };
 
-    // Use the override ad_account_id if provided, otherwise pull the first
-    // discovered Meta Ad Account from the /ads/accounts response above.
-    const discovered = (probe.adAccountsBody as { accounts?: { id?: string }[] } | undefined)?.accounts;
-    const effectiveAdAccountId = adAccountIdParam ?? discovered?.[0]?.id;
-    probe.effectiveAdAccountId = effectiveAdAccountId;
-
-    if (effectiveAdAccountId) {
-      // 2. /v1/ads → ads under this Meta Ad Account
+      // /v1/ads
       try {
         const r = await fetch(
-          `${base}/ads?adAccountId=${encodeURIComponent(effectiveAdAccountId)}&platform=facebook&fromDate=${fromDate}&toDate=${today}&limit=10`,
+          `${base}/ads?adAccountId=${encodeURIComponent(adAcc.id)}&platform=facebook&fromDate=${fromDate}&toDate=${today}&limit=5&source=all`,
           { headers: { Authorization: `Bearer ${apiKey}` } }
         );
-        probe.adsStatus = r.status;
-        const body = (await r.json().catch(() => ({}))) as { ads?: unknown[]; pagination?: unknown };
-        probe.adsCount = Array.isArray(body.ads) ? body.ads.length : null;
-        probe.adsSample = Array.isArray(body.ads) ? body.ads.slice(0, 2) : body;
-        probe.adsPagination = body.pagination;
+        adProbe.adsStatus = r.status;
+        const body = (await r.json().catch(() => ({}))) as { ads?: unknown[]; pagination?: { total?: number } };
+        adProbe.adsTotal = body.pagination?.total ?? null;
+        adProbe.adsSampleCount = Array.isArray(body.ads) ? body.ads.length : 0;
+        adProbe.firstAd = Array.isArray(body.ads) && body.ads.length > 0 ? body.ads[0] : null;
       } catch (e) {
-        probe.adsError = e instanceof Error ? e.message : String(e);
+        adProbe.adsError = e instanceof Error ? e.message : String(e);
       }
 
-      // 3. /v1/ads/campaigns → campaigns under this Meta Ad Account
+      // /v1/ads/campaigns
       try {
         const r = await fetch(
-          `${base}/ads/campaigns?adAccountId=${encodeURIComponent(effectiveAdAccountId)}&platform=facebook&limit=10`,
+          `${base}/ads/campaigns?adAccountId=${encodeURIComponent(adAcc.id)}&platform=facebook&limit=5&source=all`,
           { headers: { Authorization: `Bearer ${apiKey}` } }
         );
-        probe.campaignsStatus = r.status;
-        const body = (await r.json().catch(() => ({}))) as { campaigns?: unknown[] };
-        probe.campaignsCount = Array.isArray(body.campaigns) ? body.campaigns.length : null;
-        probe.campaignsSample = Array.isArray(body.campaigns) ? body.campaigns.slice(0, 2) : body;
+        adProbe.campaignsStatus = r.status;
+        const body = (await r.json().catch(() => ({}))) as { campaigns?: unknown[]; pagination?: { total?: number } };
+        adProbe.campaignsTotal = body.pagination?.total ?? null;
+        adProbe.campaignsSampleCount = Array.isArray(body.campaigns) ? body.campaigns.length : 0;
+        adProbe.firstCampaign = Array.isArray(body.campaigns) && body.campaigns.length > 0 ? body.campaigns[0] : null;
       } catch (e) {
-        probe.campaignsError = e instanceof Error ? e.message : String(e);
+        adProbe.campaignsError = e instanceof Error ? e.message : String(e);
       }
+
+      // /v1/ads/tree (full hierarchy in one call)
+      try {
+        const r = await fetch(
+          `${base}/ads/tree?adAccountId=${encodeURIComponent(adAcc.id)}&platform=facebook`,
+          { headers: { Authorization: `Bearer ${apiKey}` } }
+        );
+        adProbe.treeStatus = r.status;
+        const treeBody = await r.json().catch(() => ({}));
+        adProbe.treeBody = treeBody;
+      } catch (e) {
+        adProbe.treeError = e instanceof Error ? e.message : String(e);
+      }
+
+      adAccountProbes.push(adProbe);
     }
 
-    out.push(probe);
+    socialProbe.adAccounts = adAccountProbes;
+    probes.push(socialProbe);
   }
 
-  return NextResponse.json({ probes: out }, { status: 200 });
+  return NextResponse.json({ probes }, { status: 200 });
 }
