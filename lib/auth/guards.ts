@@ -8,8 +8,15 @@ import { createClient } from "@/lib/supabase/server";
  *  - marketer: every regular user. Each marketer owns their own
  *    company + brand row (auto-provisioned at signup) and connects
  *    their own Meta/TikTok/Google ad accounts directly.
+ *
+ * Legacy values ('bod'|'leader'|'client') are kept in the type union
+ * — but NOT in the DB CHECK constraint — so the still-present
+ * /(agency)/* page files (which we're not deleting in the pivot
+ * commit, just redirecting away from) continue to compile without
+ * widespread edits. They render code paths that are unreachable in
+ * practice because requireAgencyStaff redirects non-admins away.
  */
-export type UserRole = "platform_admin" | "marketer";
+export type UserRole = "platform_admin" | "marketer" | "bod" | "leader" | "client";
 
 export interface UserProfile {
   id: string;
