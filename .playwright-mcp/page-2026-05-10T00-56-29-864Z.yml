@@ -1,7 +1,0 @@
-- generic [active] [ref=e1]:
-  - generic [ref=e2]:
-    - img "Zernio" [ref=e3]
-    - generic [ref=e14]:
-      - heading "Select Facebook page" [level=1] [ref=e15]
-      - generic [ref=e16]: Choose which page to connect for posting.
-  - alert [ref=e42]

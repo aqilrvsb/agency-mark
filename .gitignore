@@ -38,4 +38,8 @@ next-env.d.ts
 
 # Claude / MCP (contains tokens)
 .mcp.json
-.claude/settings.local.json
+.claude/
+.playwright-mcp/
+
+# Local IDE / workspace
+*.code-workspace
