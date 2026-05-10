@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAgencyStaff } from "@/lib/auth/guards";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logActivity } from "@/lib/activity/log";
 
 export async function POST(req: Request) {
   const user = await requireAgencyStaff();
@@ -34,5 +35,15 @@ export async function POST(req: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logActivity({
+    userId: user.id,
+    companyId: user.company_id!,
+    action: "note.added",
+    entityType: "brand",
+    entityId: brand_id,
+    metadata: { excerpt: noteBody.slice(0, 80) },
+  });
+
   return NextResponse.json({ note: data });
 }

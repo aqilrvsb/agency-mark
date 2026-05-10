@@ -153,8 +153,8 @@ export default async function ClientOverviewPage({
       {/* Best campaign */}
       <BestCampaignCallout campaign={data.bestCampaign} />
 
-      {/* Top campaigns table */}
-      <TopCampaignsTable rows={data.topCampaigns} />
+      {/* Top campaigns table — click row to drill in */}
+      <TopCampaignsTable rows={data.topCampaigns} drillBase="/client/campaign" />
 
       {/* Budget summary */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">

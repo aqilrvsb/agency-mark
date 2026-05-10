@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAgencyLeadership } from "@/lib/auth/guards";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logActivity } from "@/lib/activity/log";
 
 export async function POST(req: Request) {
   const user = await requireAgencyLeadership();
@@ -63,6 +64,15 @@ export async function POST(req: Request) {
       total_spent_myr: 0,
     });
   }
+
+  await logActivity({
+    userId: user.id,
+    companyId: user.company_id!,
+    action: "budget.topup",
+    entityType: "brand",
+    entityId: brand_id,
+    metadata: { amount_myr, payment_method, reference },
+  });
 
   return NextResponse.json({ topup });
 }

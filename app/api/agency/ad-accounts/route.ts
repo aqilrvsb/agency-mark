@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAgencyLeadership } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity/log";
 
 export async function POST(req: Request) {
   const user = await requireAgencyLeadership();
@@ -40,6 +41,16 @@ export async function POST(req: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logActivity({
+    userId: user.id,
+    companyId: user.company_id!,
+    action: "ad_account.added",
+    entityType: "brand_ad_account",
+    entityId: (data?.id as string) ?? null,
+    metadata: { brand_id, platform, external_account_id, external_account_name },
+  });
+
   return NextResponse.json({ ad_account: data });
 }
 
@@ -57,5 +68,14 @@ export async function DELETE(req: Request) {
     .eq("company_id", user.company_id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logActivity({
+    userId: user.id,
+    companyId: user.company_id!,
+    action: "ad_account.removed",
+    entityType: "brand_ad_account",
+    entityId: id,
+  });
+
   return NextResponse.json({ ok: true });
 }

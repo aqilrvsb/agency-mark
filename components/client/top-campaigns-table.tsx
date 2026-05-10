@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import type { AggregateRow } from "@/lib/client-data/aggregate";
 
 const fmtMyr = (n: number) =>
@@ -17,7 +18,8 @@ const STATUS_COLOR: Record<string, string> = {
 type StatusFilter = "all" | "active" | "paused";
 type SortKey = "spend" | "roas" | "conversions" | "ctr";
 
-export function TopCampaignsTable({ rows }: { rows: AggregateRow[] }) {
+export function TopCampaignsTable({ rows, drillBase }: { rows: AggregateRow[]; drillBase?: string }) {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("spend");
 
@@ -116,8 +118,15 @@ export function TopCampaignsTable({ rows }: { rows: AggregateRow[] }) {
               filtered.map((r) => {
                 const statusKey = (r.status ?? "").toUpperCase();
                 const statusClass = STATUS_COLOR[statusKey] ?? "bg-white/5 text-[var(--color-text-muted)]";
+                const drillHref = drillBase ? `${drillBase}/${encodeURIComponent(r.key)}` : null;
                 return (
-                  <tr key={r.key} className="border-b border-[var(--color-border)] last:border-0 hover:bg-white/[0.02]">
+                  <tr
+                    key={r.key}
+                    className={`border-b border-[var(--color-border)] last:border-0 hover:bg-white/[0.02] ${
+                      drillHref ? "cursor-pointer" : ""
+                    }`}
+                    onClick={drillHref ? () => router.push(drillHref) : undefined}
+                  >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="font-bold truncate max-w-md" title={r.name}>

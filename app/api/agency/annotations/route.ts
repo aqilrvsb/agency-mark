@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAgencyStaff } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity/log";
 
 export async function POST(req: Request) {
   const user = await requireAgencyStaff();
@@ -45,6 +46,16 @@ export async function POST(req: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logActivity({
+    userId: user.id,
+    companyId: user.company_id,
+    action: "annotation.added",
+    entityType: "brand",
+    entityId: brandId,
+    metadata: { anchor_date: anchorDate, excerpt: bodyText.slice(0, 80) },
+  });
+
   return NextResponse.json({ ok: true, annotation: data });
 }
 
