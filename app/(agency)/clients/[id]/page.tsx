@@ -13,7 +13,8 @@ import { ClientHubTabs, parseHubTab, type HubTab } from "@/components/agency/cli
 import { HeroKPIStrip } from "@/components/client/hero-kpi-strip";
 import { DualAxisChart } from "@/components/client/dual-axis-chart";
 import { TopCampaignsTable } from "@/components/client/top-campaigns-table";
-import { aggregateAdData, summarize } from "@/lib/client-data/aggregate";
+import { aggregateAdData, parseDateRange, summarize } from "@/lib/client-data/aggregate";
+import { DateRangePicker } from "@/components/client/date-range-picker";
 
 export const dynamic = "force-dynamic";
 
@@ -38,11 +39,12 @@ export default async function ClientHubPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; start?: string; end?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
   const activeTab = parseHubTab(sp.tab);
+  const { start, end } = parseDateRange(sp); // defaults to last 90 days
   const user = await requireAgencyStaff();
   const supabase = await createClient();
 
@@ -55,10 +57,10 @@ export default async function ClientHubPage({
 
   if (!brand) notFound();
 
-  const today = new Date().toISOString().slice(0, 10);
-  const start30 = isoMinusDays(today, 30);
-  const priorEnd = isoMinusDays(start30, 1);
-  const priorStart = isoMinusDays(priorEnd, 30);
+  // Compute prior-period window of equal length for vs-prev deltas
+  const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
+  const priorEnd = isoMinusDays(start, 1);
+  const priorStart = isoMinusDays(priorEnd, days - 1);
 
   // Always fetch baseline (used in header KPIs across every tab)
   const [{ data: currData }, { data: priorData }, { data: budget }] = await Promise.all([
@@ -66,8 +68,8 @@ export default async function ClientHubPage({
       .from("ad_data")
       .select("platform, date_start, data")
       .eq("brand_id", id)
-      .gte("date_start", start30)
-      .lte("date_start", today),
+      .gte("date_start", start)
+      .lte("date_start", end),
     supabase
       .from("ad_data")
       .select("platform, date_start, data")
@@ -106,8 +108,8 @@ export default async function ClientHubPage({
   const priorRevenue = priorDaily.reduce((s, d) => s + d.revenue, 0);
 
   const heroTiles = [
-    { label: "Spend (30d)", value: fmtMyr(totals.spend), delta: deltaPct(totals.spend, priorTotals.spend), deltaPositiveIsGood: false, accent: "text-[var(--color-orange)]" },
-    { label: "Revenue (30d)", value: fmtMyr(currRevenue), delta: deltaPct(currRevenue, priorRevenue), deltaPositiveIsGood: true, accent: "text-emerald-400" },
+    { label: "Spend", value: fmtMyr(totals.spend), delta: deltaPct(totals.spend, priorTotals.spend), deltaPositiveIsGood: false, accent: "text-[var(--color-orange)]" },
+    { label: "Revenue", value: fmtMyr(currRevenue), delta: deltaPct(currRevenue, priorRevenue), deltaPositiveIsGood: true, accent: "text-emerald-400" },
     { label: "ROAS", value: totals.roas > 0 ? `${totals.roas.toFixed(2)}×` : "—", delta: deltaPct(totals.roas, priorTotals.roas), deltaPositiveIsGood: true, accent: "text-[var(--color-amber)]" },
     { label: "Conversions", value: fmtInt(totals.conversions), delta: deltaPct(totals.conversions, priorTotals.conversions), deltaPositiveIsGood: true, accent: "text-[var(--color-lime)]" },
     { label: "CTR", value: fmtPct(totals.ctr), delta: deltaPct(totals.ctr, priorTotals.ctr), deltaPositiveIsGood: true, accent: "text-cyan-400" },
@@ -116,16 +118,19 @@ export default async function ClientHubPage({
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
-      <header className="flex items-center gap-4 mb-6">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+      <header className="flex items-start gap-4 mb-6 flex-wrap">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0">
           <Building2 className="w-7 h-7 text-black" />
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="font-display font-extrabold text-3xl lg:text-4xl truncate">{brand.name as string}</h1>
           <p className="text-[var(--color-text-secondary)] text-sm">
             {(brand.contact_email as string) || "No contact email"} · {(brand.contact_phone as string) || "No phone"}
+            {" · "}
+            <span className="font-mono text-xs text-[var(--color-text-muted)]">{start} → {end} ({days} hari)</span>
           </p>
         </div>
+        <DateRangePicker />
       </header>
 
       <ClientHubTabs brandId={id} active={activeTab} />
