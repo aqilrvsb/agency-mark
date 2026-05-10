@@ -47,7 +47,7 @@ export default async function TemplatesIndexPage() {
     .order("level")
     .order("created_at");
 
-  const templates = (rows ?? []) as TemplateRow[];
+  const templates = (rows ?? []) as unknown as TemplateRow[];
   const grouped = new Map<string, TemplateRow[]>();
   for (const t of templates) {
     const k = t.platform;

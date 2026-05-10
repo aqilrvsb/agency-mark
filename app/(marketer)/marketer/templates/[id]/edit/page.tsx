@@ -51,9 +51,9 @@ export default async function EditTemplatePage({
           initial={{
             id: row.id as string,
             name: row.name as string,
-            fields: (row.fields as { id: string; source: "field" | "formula" }[]) ?? [],
+            fields: (row.fields as unknown as { id: string; source: "field" | "formula" }[]) ?? [],
             formulas:
-              (row.formulas as {
+              (row.formulas as unknown as {
                 id: string;
                 name: string;
                 expression: string;

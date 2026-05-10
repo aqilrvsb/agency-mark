@@ -59,7 +59,7 @@ export default async function RunReportPage({
     .maybeSingle();
 
   if (!tplRow) notFound();
-  const tpl = tplRow as TemplateRow;
+  const tpl = tplRow as unknown as TemplateRow;
   const catalog = getCatalog(tpl.platform);
   const fieldById = new Map<string, CatalogField>(catalog.fields.map((f) => [f.id, f]));
 
