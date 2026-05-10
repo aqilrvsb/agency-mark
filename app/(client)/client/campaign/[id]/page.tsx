@@ -4,6 +4,7 @@ import { aggregateAdData, summarize, parseDateRange } from "@/lib/client-data/ag
 import { HeroKPIStrip } from "@/components/client/hero-kpi-strip";
 import { DualAxisChart } from "@/components/client/dual-axis-chart";
 import { DateRangePicker } from "@/components/client/date-range-picker";
+import { CreativeGallery } from "@/components/client/creative-gallery";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -163,6 +164,10 @@ export default async function CampaignDetailPage({
 
       <HeroKPIStrip tiles={tiles} />
       <DualAxisChart current={daily} prior={priorDaily} />
+
+      {/* Creative gallery — visual grid of ad thumbnails + ad copy + KPIs.
+          Renders only when at least one ad has a creative or substantive spend. */}
+      <CreativeGallery ads={adAgg} limit={12} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)] overflow-hidden">

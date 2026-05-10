@@ -21,6 +21,9 @@ export interface AggregateRow {
   roas: number;
   frequency: number;
   videoViews: number;
+  // Creative — populated for ad-level aggregation; null for campaign/adset.
+  creativeThumbnail: string | null;
+  creativeBody: string | null;
 }
 
 interface AdDataRow {
@@ -93,9 +96,22 @@ export function aggregateAdData(rows: AdDataRow[], level: AdLevel): AggregateRow
       roas: 0,
       frequency: 0,
       videoViews: 0,
+      creativeThumbnail: null as string | null,
+      creativeBody: null as string | null,
       _reachUnion: new Set<string>(),
       _denomDays: 0,
     };
+
+    // Capture creative on ad-level aggregation (first non-null wins; rows
+    // for the same ad share the same creative anyway, just in case)
+    if (level === "ad") {
+      if (!existing.creativeThumbnail) {
+        existing.creativeThumbnail = pickString(d, ["creative_thumbnail", "thumbnail_url", "image_url"]);
+      }
+      if (!existing.creativeBody) {
+        existing.creativeBody = pickString(d, ["creative_body", "ad_copy", "body"]);
+      }
+    }
 
     existing.spend += pickNumber(d, ["spend", "cost", "amount_spent"]);
     existing.impressions += pickNumber(d, ["impressions"]);
