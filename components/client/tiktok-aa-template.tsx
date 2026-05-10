@@ -107,27 +107,27 @@ function MetricTrendCard({
     }));
 
   return (
-    <div className="rounded-lg bg-white border border-slate-200 p-5 flex flex-col">
+    <div className="rounded-lg bg-[var(--color-bg-card)] border border-[var(--color-border)] p-4 sm:p-5 flex flex-col">
       <div className="flex items-start justify-between mb-3">
-        <div className="text-[15px] font-medium text-slate-700">{title}</div>
-        <div className="text-[15px] font-semibold text-slate-700">{formatTotal(total)}</div>
+        <div className="text-[15px] font-medium text-[var(--color-text-secondary)]">{title}</div>
+        <div className="text-[15px] font-semibold text-[var(--color-text-primary)]">{formatTotal(total)}</div>
       </div>
       {data.length === 0 ? (
-        <div className="h-[220px] flex items-center justify-center text-xs text-slate-400">
+        <div className="h-[220px] flex items-center justify-center text-xs text-[var(--color-text-muted)]">
           No data in this period.
         </div>
       ) : (
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="none">
           {yLabels.map((t, i) => (
             <g key={i}>
-              <line x1={padL} y1={t.y} x2={W - padR} y2={t.y} stroke="#f1f5f9" strokeWidth={1} />
-              <text x={padL - 6} y={t.y + 4} fontSize="10" textAnchor="end" fill="#94a3b8">
+              <line x1={padL} y1={t.y} x2={W - padR} y2={t.y} stroke="#262626" strokeWidth={1} />
+              <text x={padL - 6} y={t.y + 4} fontSize="10" textAnchor="end" fill="#707070">
                 {NUM(t.v)}
               </text>
             </g>
           ))}
           {xLabels.map((t, i) => (
-            <text key={i} x={t.x} y={H - 8} fontSize="10" textAnchor="middle" fill="#94a3b8">
+            <text key={i} x={t.x} y={H - 8} fontSize="10" textAnchor="middle" fill="#707070">
               {t.label}
             </text>
           ))}
@@ -162,18 +162,18 @@ function MetricBreakdownCard({
   const max = Math.max(1, ...top.map((r) => r.value));
 
   return (
-    <div className="rounded-lg bg-white border border-slate-200 p-5 flex flex-col">
+    <div className="rounded-lg bg-[var(--color-bg-card)] border border-[var(--color-border)] p-4 sm:p-5 flex flex-col">
       <div className="flex items-start justify-between mb-4">
-        <div className="text-[15px] font-medium text-slate-700">{title}</div>
+        <div className="text-[15px] font-medium text-[var(--color-text-secondary)]">{title}</div>
         <div className="flex items-center gap-3">
-          <div className="text-[15px] font-semibold text-slate-700">{formatTotal(total)}</div>
-          <button type="button" aria-label="More" className="text-slate-400 hover:text-slate-600 leading-none -mt-1">
+          <div className="text-[15px] font-semibold text-[var(--color-text-primary)]">{formatTotal(total)}</div>
+          <button type="button" aria-label="More" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] leading-none -mt-1">
             •••
           </button>
         </div>
       </div>
       {top.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-xs text-slate-400 py-12">
+        <div className="flex-1 flex items-center justify-center text-xs text-[var(--color-text-muted)] py-12">
           No data in this period.
         </div>
       ) : (
@@ -183,10 +183,10 @@ function MetricBreakdownCard({
             return (
               <div key={i}>
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="text-[13px] text-slate-700 truncate pr-3">{r.name}</div>
-                  <div className="text-[13px] font-semibold text-slate-700">{NUM(r.value)}</div>
+                  <div className="text-[13px] text-[var(--color-text-secondary)] truncate pr-3">{r.name}</div>
+                  <div className="text-[13px] font-semibold text-[var(--color-text-primary)]">{NUM(r.value)}</div>
                 </div>
-                <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
                   <div className="h-full rounded-full" style={{ width: `${pct}%`, background: BAR_COLOR }} />
                 </div>
               </div>
@@ -200,12 +200,12 @@ function MetricBreakdownCard({
 
 function KpiTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-white border border-slate-200 p-4 min-h-[100px] flex flex-col">
-      <div className="text-[12px] text-slate-500 mb-2 truncate" title={label}>
+    <div className="rounded-lg bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3 sm:p-4 min-h-[90px] sm:min-h-[100px] flex flex-col">
+      <div className="text-[11px] sm:text-[12px] text-[var(--color-text-muted)] mb-2 truncate" title={label}>
         {label}
       </div>
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-xl lg:text-2xl font-extrabold text-slate-900 tracking-tight">{value}</div>
+        <div className="text-lg sm:text-xl lg:text-2xl font-extrabold text-[var(--color-text-primary)] tracking-tight">{value}</div>
       </div>
     </div>
   );
@@ -247,18 +247,18 @@ function DataTable({ level, rows }: { level: "campaign" | "adset" | "ad"; rows: 
         ];
 
   return (
-    <div className="rounded-lg bg-white border border-slate-200 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-        <div className="text-[13px] text-slate-500">
+    <div className="rounded-lg bg-[var(--color-bg-card)] border border-[var(--color-border)] overflow-hidden">
+      <div className="flex items-center justify-between gap-3 flex-wrap px-4 sm:px-5 py-4 border-b border-[var(--color-border)]">
+        <div className="text-[13px] text-[var(--color-text-muted)]">
           Showing {rows.length} of {rows.length} Rows
         </div>
         <div className="flex items-center gap-3">
           <input
             type="search"
             placeholder="Search"
-            className="h-8 w-44 rounded border border-slate-300 px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+            className="h-8 w-full sm:w-44 rounded border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-orange-soft)] focus:border-[var(--color-orange)]"
           />
-          <button type="button" aria-label="More" className="text-slate-400 hover:text-slate-600 leading-none">
+          <button type="button" aria-label="More" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] leading-none">
             •••
           </button>
         </div>
@@ -267,11 +267,11 @@ function DataTable({ level, rows }: { level: "campaign" | "adset" | "ad"; rows: 
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[900px]">
           <thead>
-            <tr className="border-b border-slate-200">
+            <tr className="border-b border-[var(--color-border)]">
               {headers.map((h) => (
                 <th
                   key={h.key}
-                  className={`text-[11px] font-semibold tracking-wider text-slate-500 uppercase px-4 py-3 ${
+                  className={`text-[11px] font-semibold tracking-wider text-[var(--color-text-muted)] uppercase px-4 py-3 ${
                     h.align === "right" ? "text-right" : "text-left"
                   }`}
                 >
@@ -283,13 +283,13 @@ function DataTable({ level, rows }: { level: "campaign" | "adset" | "ad"; rows: 
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={headers.length} className="px-4 py-12 text-center text-slate-400 text-sm">
+                <td colSpan={headers.length} className="px-4 py-12 text-center text-[var(--color-text-muted)] text-sm">
                   No data in this period.
                 </td>
               </tr>
             ) : (
               rows.map((r, i) => (
-                <tr key={r.key} className={i > 0 ? "border-t border-slate-100" : ""}>
+                <tr key={r.key} className={i > 0 ? "border-t border-[var(--color-border)]" : ""}>
                   {headers.map((h) => {
                     let cell: React.ReactNode = DASH;
                     const cls = h.align === "right" ? "text-right tabular-nums" : "text-left";
@@ -300,11 +300,11 @@ function DataTable({ level, rows }: { level: "campaign" | "adset" | "ad"; rows: 
                         <div className="flex items-center gap-3">
                           {thumb ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={thumb} alt="" className="w-12 h-9 object-cover rounded shrink-0 bg-slate-100" />
+                            <img src={thumb} alt="" className="w-12 h-9 object-cover rounded shrink-0 bg-[var(--color-bg-soft)]" />
                           ) : (
-                            <div className="w-12 h-9 rounded bg-slate-100 shrink-0" />
+                            <div className="w-12 h-9 rounded bg-[var(--color-bg-soft)] shrink-0" />
                           )}
-                          <span className="truncate text-blue-600 max-w-[200px]">{r.name}</span>
+                          <span className="truncate text-[var(--color-orange)] max-w-[200px]">{r.name}</span>
                         </div>
                       );
                     } else if (h.key === "adtext") {
@@ -318,7 +318,7 @@ function DataTable({ level, rows }: { level: "campaign" | "adset" | "ad"; rows: 
                     else if (h.key === "cpr") cell = r.conversions > 0 ? MYR(r.cpa) : DASH;
                     else if (h.key === "rrate") cell = r.clicks > 0 ? PCT(r.conversionRate) : DASH;
                     return (
-                      <td key={h.key} className={`px-4 py-3.5 text-slate-700 ${cls}`}>
+                      <td key={h.key} className={`px-4 py-3.5 text-[var(--color-text-secondary)] ${cls}`}>
                         {cell}
                       </td>
                     );
@@ -347,13 +347,13 @@ export function TikTokAATemplate(props: TikTokTemplateProps) {
 
   if (!totals || !range) {
     return (
-      <div className="bg-slate-50 min-h-screen p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          <header className="mb-6 flex items-center gap-2 text-slate-700">
+          <header className="mb-6 flex items-center gap-2 text-[var(--color-text-secondary)]">
             <TikTokIcon />
             <h1 className="text-lg font-medium">{labels.plural}</h1>
           </header>
-          <div className="rounded-lg bg-white border border-slate-200 p-12 text-center text-sm text-slate-500">
+          <div className="rounded-lg bg-[var(--color-bg-card)] border border-[var(--color-border)] p-12 text-center text-sm text-[var(--color-text-muted)]">
             No brand assigned to this account yet.
           </div>
         </div>
@@ -443,29 +443,25 @@ export function TikTokAATemplate(props: TikTokTemplateProps) {
   ];
 
   return (
-    <div className="bg-slate-50 min-h-screen p-6 lg:p-8">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-5 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-2 text-slate-700">
+        <header className="mb-5 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-3">
+          <div className="flex items-center gap-2 text-[var(--color-text-secondary)] flex-wrap">
             <TikTokIcon />
-            <h1 className="text-lg font-medium">{labels.plural}</h1>
+            <h1 className="text-lg font-medium text-[var(--color-text-primary)]">{labels.plural}</h1>
             {brandName && (
-              <span className="text-sm text-slate-400 ml-2">
+              <span className="text-sm text-[var(--color-text-muted)] ml-1 sm:ml-2 truncate max-w-[60vw]">
                 · {brandName} · {range.start} → {range.end}
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="[&_button]:bg-white [&_button]:text-slate-700 [&_button]:border-slate-300 [&_button]:hover:bg-slate-50 [&_a]:bg-white [&_a]:text-slate-700 [&_a]:border-slate-300">
-              <AdAccountFilter accounts={adAccountOptions} />
-            </div>
-            <div className="[&_input]:bg-white [&_input]:text-slate-700 [&_input]:border-slate-300 [&_button]:bg-white [&_button]:text-slate-700 [&_button]:border-slate-300 [&_a]:bg-white [&_a]:text-slate-700 [&_a]:border-slate-300">
-              <DateRangePicker />
-            </div>
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+            <AdAccountFilter accounts={adAccountOptions} />
+            <DateRangePicker />
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
           <MetricTrendCard
             title="Impressions"
             total={totals.impressions}
@@ -480,7 +476,7 @@ export function TikTokAATemplate(props: TikTokTemplateProps) {
           />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
           {tiles.map((t) => (
             <KpiTile key={t.label} label={t.label} value={t.value} />
           ))}
@@ -488,7 +484,7 @@ export function TikTokAATemplate(props: TikTokTemplateProps) {
 
         <DataTable level={level} rows={rows} />
 
-        <p className="mt-4 text-[11px] text-slate-400">
+        <p className="mt-4 text-[11px] text-[var(--color-text-muted)]">
           {dailyImpressions.length} days of data · {rows.length} {labels.plural.toLowerCase()} in window.
         </p>
       </div>
