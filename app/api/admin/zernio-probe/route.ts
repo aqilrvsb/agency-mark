@@ -19,6 +19,7 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const brandId = url.searchParams.get("brand_id");
+  const adAccountIdParam = url.searchParams.get("ad_account_id");
   if (!brandId) return NextResponse.json({ error: "brand_id required" }, { status: 400 });
 
   const apiKey = process.env.ZERNIO_API_KEY;
@@ -56,36 +57,45 @@ export async function GET(req: Request) {
       probe.adAccountsError = e instanceof Error ? e.message : String(e);
     }
 
-    // 2. /v1/ads → list ads (last 30 days) for this social account
     const today = new Date().toISOString().slice(0, 10);
-    const start = new Date(); start.setDate(start.getDate() - 30);
+    const start = new Date(); start.setDate(start.getDate() - 90);
     const fromDate = start.toISOString().slice(0, 10);
-    try {
-      const r = await fetch(
-        `${base}/ads?accountId=${encodeURIComponent(socialAccountId)}&fromDate=${fromDate}&toDate=${today}&limit=10`,
-        { headers: { Authorization: `Bearer ${apiKey}` } }
-      );
-      probe.adsStatus = r.status;
-      const body = (await r.json().catch(() => ({}))) as { ads?: unknown[]; pagination?: unknown };
-      probe.adsCount = Array.isArray(body.ads) ? body.ads.length : null;
-      probe.adsSample = Array.isArray(body.ads) ? body.ads.slice(0, 2) : body;
-      probe.adsPagination = body.pagination;
-    } catch (e) {
-      probe.adsError = e instanceof Error ? e.message : String(e);
-    }
 
-    // 3. /v1/ads/campaigns → list campaigns
-    try {
-      const r = await fetch(
-        `${base}/ads/campaigns?accountId=${encodeURIComponent(socialAccountId)}&limit=10`,
-        { headers: { Authorization: `Bearer ${apiKey}` } }
-      );
-      probe.campaignsStatus = r.status;
-      const body = (await r.json().catch(() => ({}))) as { campaigns?: unknown[] };
-      probe.campaignsCount = Array.isArray(body.campaigns) ? body.campaigns.length : null;
-      probe.campaignsSample = Array.isArray(body.campaigns) ? body.campaigns.slice(0, 2) : body;
-    } catch (e) {
-      probe.campaignsError = e instanceof Error ? e.message : String(e);
+    // Use the override ad_account_id if provided, otherwise pull the first
+    // discovered Meta Ad Account from the /ads/accounts response above.
+    const discovered = (probe.adAccountsBody as { accounts?: { id?: string }[] } | undefined)?.accounts;
+    const effectiveAdAccountId = adAccountIdParam ?? discovered?.[0]?.id;
+    probe.effectiveAdAccountId = effectiveAdAccountId;
+
+    if (effectiveAdAccountId) {
+      // 2. /v1/ads → ads under this Meta Ad Account
+      try {
+        const r = await fetch(
+          `${base}/ads?adAccountId=${encodeURIComponent(effectiveAdAccountId)}&platform=facebook&fromDate=${fromDate}&toDate=${today}&limit=10`,
+          { headers: { Authorization: `Bearer ${apiKey}` } }
+        );
+        probe.adsStatus = r.status;
+        const body = (await r.json().catch(() => ({}))) as { ads?: unknown[]; pagination?: unknown };
+        probe.adsCount = Array.isArray(body.ads) ? body.ads.length : null;
+        probe.adsSample = Array.isArray(body.ads) ? body.ads.slice(0, 2) : body;
+        probe.adsPagination = body.pagination;
+      } catch (e) {
+        probe.adsError = e instanceof Error ? e.message : String(e);
+      }
+
+      // 3. /v1/ads/campaigns → campaigns under this Meta Ad Account
+      try {
+        const r = await fetch(
+          `${base}/ads/campaigns?adAccountId=${encodeURIComponent(effectiveAdAccountId)}&platform=facebook&limit=10`,
+          { headers: { Authorization: `Bearer ${apiKey}` } }
+        );
+        probe.campaignsStatus = r.status;
+        const body = (await r.json().catch(() => ({}))) as { campaigns?: unknown[] };
+        probe.campaignsCount = Array.isArray(body.campaigns) ? body.campaigns.length : null;
+        probe.campaignsSample = Array.isArray(body.campaigns) ? body.campaigns.slice(0, 2) : body;
+      } catch (e) {
+        probe.campaignsError = e instanceof Error ? e.message : String(e);
+      }
     }
 
     out.push(probe);
