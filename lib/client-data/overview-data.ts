@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
 import { aggregateAdData, summarize, type AggregateRow } from "./aggregate";
+import { ensureFreshAdData } from "./lazy-backfill";
 
 export type ConnectedPlatform = "meta_ads" | "google_ads" | "tiktok_ads";
 
@@ -111,6 +112,11 @@ export async function loadOverviewData(opts: {
   const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
   const priorEnd = isoMinusDays(start, 1);
   const priorStart = isoMinusDays(priorEnd, days - 1);
+
+  // Lazy-backfill: if we don't have ad_data covering the requested window
+  // (or the cache is stale), pull from Zernio inline before reading. Fully
+  // best-effort — never throws.
+  await ensureFreshAdData({ brandId, fromDate: start, toDate: end });
 
   // Five parallel queries: current, prior, budget, brand_ad_accounts, annotations
   const [
