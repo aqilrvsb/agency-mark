@@ -1,13 +1,21 @@
 import type { DailyPoint } from "@/lib/client-data/overview-data";
 
+interface ChartAnnotation {
+  id: string;
+  anchor_date: string;
+  body: string;
+}
+
 // SVG-based dual-axis chart. Server-renderable. No deps.
 export function DualAxisChart({
   current,
   prior,
+  annotations = [],
   height = 200,
 }: {
   current: DailyPoint[];
   prior: DailyPoint[];
+  annotations?: ChartAnnotation[];
   height?: number;
 }) {
   if (current.length === 0) {
@@ -112,6 +120,36 @@ export function DualAxisChart({
             <text key={d.date + i} x={x} y={height - 8} textAnchor="middle" fontSize="10" fill="currentColor" opacity="0.5">
               {d.date.slice(5)}
             </text>
+          );
+        })}
+
+        {/* Annotation pins — vertical line + small marker, hover shows body via title */}
+        {annotations.map((a) => {
+          const idx = current.findIndex((d) => d.date === a.anchor_date);
+          if (idx < 0) return null;
+          const x = padding.left + idx * xStep;
+          return (
+            <g key={a.id}>
+              <title>{`${a.anchor_date}: ${a.body}`}</title>
+              <line
+                x1={x}
+                x2={x}
+                y1={padding.top}
+                y2={padding.top + innerH}
+                stroke="var(--color-orange)"
+                strokeOpacity="0.4"
+                strokeWidth="1"
+                strokeDasharray="2 3"
+              />
+              <circle
+                cx={x}
+                cy={padding.top + 6}
+                r="4"
+                fill="var(--color-orange)"
+                stroke="var(--color-bg)"
+                strokeWidth="1.5"
+              />
+            </g>
           );
         })}
       </svg>

@@ -3,6 +3,7 @@ import { HeroKPIStrip } from "./hero-kpi-strip";
 import { DualAxisChart } from "./dual-axis-chart";
 import { TopCampaignsTable } from "./top-campaigns-table";
 import { DateRangePicker } from "./date-range-picker";
+import { ChartAnnotationsManager, type AnnotationItem } from "./chart-annotations-form";
 
 const fmtMyr = (n: number) =>
   `RM ${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -38,6 +39,8 @@ export interface PlatformPageProps {
   daily: { date: string; spend: number; revenue: number }[];
   priorDaily: { date: string; spend: number; revenue: number }[];
   rows: AggregateRow[];
+  annotations?: AnnotationItem[];
+  brandId?: string;
 }
 
 function levelLabel(level: "campaign" | "adset" | "ad", platformLabel: string): { plural: string; singular: string } {
@@ -59,6 +62,8 @@ export function PlatformPageTemplate({
   daily,
   priorDaily,
   rows,
+  annotations = [],
+  brandId,
 }: PlatformPageProps) {
   const labels = levelLabel(level, platformLabel);
 
@@ -137,7 +142,17 @@ export function PlatformPageTemplate({
 
       <HeroKPIStrip tiles={tiles} />
 
-      <DualAxisChart current={daily} prior={priorDaily} />
+      <DualAxisChart current={daily} prior={priorDaily} annotations={annotations} />
+
+      {brandId && (
+        <ChartAnnotationsManager
+          brandId={brandId}
+          rangeStart={range.start}
+          rangeEnd={range.end}
+          annotations={annotations}
+          canEdit={false}
+        />
+      )}
 
       <TopCampaignsTable rows={rows} />
     </div>

@@ -10,6 +10,7 @@ import { ChannelBreakdown } from "@/components/client/channel-breakdown";
 import { BestCampaignCallout } from "@/components/client/best-campaign-callout";
 import { TopCampaignsTable } from "@/components/client/top-campaigns-table";
 import { DateRangePicker } from "@/components/client/date-range-picker";
+import { ChartAnnotationsManager } from "@/components/client/chart-annotations-form";
 
 export const dynamic = "force-dynamic";
 
@@ -128,8 +129,17 @@ export default async function ClientOverviewPage({
       {/* AI narrative — empty state for now until LLM is wired */}
       <AINarrativeCard content={null} />
 
-      {/* Dual-axis chart */}
-      <DualAxisChart current={data.daily} prior={data.priorDaily} />
+      {/* Dual-axis chart with annotation pins */}
+      <DualAxisChart current={data.daily} prior={data.priorDaily} annotations={data.annotations} />
+
+      {/* Annotations list (read-only on client portal, editable for agency) */}
+      <ChartAnnotationsManager
+        brandId={data.brand.id}
+        rangeStart={data.range.start}
+        rangeEnd={data.range.end}
+        annotations={data.annotations}
+        canEdit={false}
+      />
 
       {/* Channel breakdown */}
       <ChannelBreakdown platforms={data.byPlatform} />

@@ -566,6 +566,58 @@ export type Database = {
           },
         ]
       }
+      chart_annotations: {
+        Row: {
+          anchor_date: string
+          author_id: string | null
+          body: string
+          brand_id: string
+          company_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          anchor_date: string
+          author_id?: string | null
+          body: string
+          brand_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          anchor_date?: string
+          author_id?: string | null
+          body?: string
+          brand_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_annotations_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chart_annotations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chart_annotations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_budgets: {
         Row: {
           brand_id: string

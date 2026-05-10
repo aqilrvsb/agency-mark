@@ -1,0 +1,60 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - link "AdSolution Agency" [ref=e5] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e7]
+        - generic [ref=e10]:
+          - generic [ref=e11]: AdSolution
+          - generic [ref=e12]: Agency
+      - navigation [ref=e13]:
+        - link "Overview" [ref=e14] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e15]
+          - text: Overview
+        - link "Clients" [ref=e20] [cursor=pointer]:
+          - /url: /clients
+          - img [ref=e21]
+          - text: Clients
+        - link "Campaigns" [ref=e26] [cursor=pointer]:
+          - /url: /campaigns
+          - img [ref=e27]
+          - text: Campaigns
+        - link "Analytics" [ref=e30] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e31]
+          - text: Analytics
+        - link "Reports" [ref=e33] [cursor=pointer]:
+          - /url: /reports
+          - img [ref=e34]
+          - text: Reports
+        - link "Invoices" [ref=e37] [cursor=pointer]:
+          - /url: /invoices
+          - img [ref=e38]
+          - text: Invoices
+        - link "Notifications" [ref=e41] [cursor=pointer]:
+          - /url: /notifications
+          - img [ref=e42]
+          - text: Notifications
+        - link "Staff" [ref=e45] [cursor=pointer]:
+          - /url: /staff
+          - img [ref=e46]
+          - text: Staff
+        - link "Activity Logs" [ref=e58] [cursor=pointer]:
+          - /url: /activity
+          - img [ref=e59]
+          - text: Activity Logs
+        - link "Settings" [ref=e61] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e62]
+          - text: Settings
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]: Signed in as
+          - generic [ref=e68]: aqil
+          - generic [ref=e69]: bod
+        - button "Sign out" [ref=e70]:
+          - img [ref=e71]
+          - text: Sign out
+    - main [ref=e74]
+  - alert [ref=e86]

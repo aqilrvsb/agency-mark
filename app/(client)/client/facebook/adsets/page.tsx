@@ -33,6 +33,8 @@ export default async function FacebookAdSetsPage({
       daily={data.daily}
       priorDaily={data.priorDaily}
       rows={data.rows}
+      annotations={data.annotations}
+      brandId={data.brand?.id}
     />
   );
 }

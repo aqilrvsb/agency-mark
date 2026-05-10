@@ -1,0 +1,40 @@
+[    4915ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://www.facebook.com/:0
+[    5136ms] [LOG] 
+%cStop! font-family:helvetica; font-size:20px; font-size:50px; font-weight:bold; color:red; -webkit-text-stroke:1px black; @ https://static.xx.fbcdn.net/rsrc.php/v4/yu/r/0U22eSxJx5O.js:243
+[    5136ms] [LOG] 
+%cThis is a browser feature intended for developers. If someone told you to copy and paste something here to enable a Facebook feature or "hack" someone's account, it's a scam and will give them access to your Facebook account. font-family:helvetica; font-size:20px;  @ https://static.xx.fbcdn.net/rsrc.php/v4/yu/r/0U22eSxJx5O.js:243
+[    5136ms] [LOG] 
+%cSee https://www.facebook.com/selfxss for more information. font-family:helvetica; font-size:20px;  @ https://static.xx.fbcdn.net/rsrc.php/v4/yu/r/0U22eSxJx5O.js:243
+[    5137ms] [LOG] 
+%c  @ https://static.xx.fbcdn.net/rsrc.php/v4/yu/r/0U22eSxJx5O.js:243
+[  240382ms] [LOG] 
+%cStop! font-family:helvetica; font-size:20px; font-size:50px; font-weight:bold; color:red; -webkit-text-stroke:1px black; @ https://static.xx.fbcdn.net/rsrc.php/v4/yu/r/0U22eSxJx5O.js:243
+[  240383ms] [LOG] 
+%cThis is a browser feature intended for developers. If someone told you to copy and paste something here to enable a Facebook feature or "hack" someone's account, it's a scam and will give them access to your Facebook account. font-family:helvetica; font-size:20px;  @ https://static.xx.fbcdn.net/rsrc.php/v4/yu/r/0U22eSxJx5O.js:243
+[  240383ms] [LOG] 
+%cSee https://www.facebook.com/selfxss for more information. font-family:helvetica; font-size:20px;  @ https://static.xx.fbcdn.net/rsrc.php/v4/yu/r/0U22eSxJx5O.js:243
+[  240383ms] [LOG] 
+%c  @ https://static.xx.fbcdn.net/rsrc.php/v4/yu/r/0U22eSxJx5O.js:243
+[  240400ms] [ERROR] ErrorUtils caught an error:
+
+terminate stream because StartStreamFailure with msg : UNAUTHENTICATED [Caught in: Subscription error in preprocessResponse]
+
+Subsequent non-fatal errors won't be logged; see https://fburl.com/debugjs. {column: 180, clientTime: 1778374388, extra: Object, guardList: Array(0), hash: jzjxo5} @ https://static.xx.fbcdn.net/rsrc.php/v4/yu/r/0U22eSxJx5O.js:78
+[  264990ms] [LOG] 
+%cStop! font-family:helvetica; font-size:20px; font-size:50px; font-weight:bold; color:red; -webkit-text-stroke:1px black; @ https://static.xx.fbcdn.net/rsrc.php/v4/y6/r/iIDp7JB-5gT.js:243
+[  264990ms] [LOG] 
+%cThis is a browser feature intended for developers. If someone told you to copy and paste something here to enable a Facebook feature or "hack" someone's account, it's a scam and will give them access to your Facebook account. font-family:helvetica; font-size:20px;  @ https://static.xx.fbcdn.net/rsrc.php/v4/y6/r/iIDp7JB-5gT.js:243
+[  264990ms] [LOG] 
+%cSee https://www.facebook.com/selfxss for more information. font-family:helvetica; font-size:20px;  @ https://static.xx.fbcdn.net/rsrc.php/v4/y6/r/iIDp7JB-5gT.js:243
+[  264990ms] [LOG] 
+%c  @ https://static.xx.fbcdn.net/rsrc.php/v4/y6/r/iIDp7JB-5gT.js:243
+[  265226ms] [ERROR] Permissions policy violation: unload is not allowed in this document. @ https://static.xx.fbcdn.net/rsrc.php/v4/y4/r/dXAv7EHn9XG.js:319
+[  271280ms] [ERROR] Permissions policy violation: unload is not allowed in this document. @ https://static.xx.fbcdn.net/rsrc.php/v4/y4/r/dXAv7EHn9XG.js:319
+[  272796ms] [LOG] 
+%cStop! font-family:helvetica; font-size:20px; font-size:50px; font-weight:bold; color:red; -webkit-text-stroke:1px black; @ https://static.xx.fbcdn.net/rsrc.php/v4/y6/r/iIDp7JB-5gT.js:243
+[  272796ms] [LOG] 
+%cThis is a browser feature intended for developers. If someone told you to copy and paste something here to enable a Facebook feature or "hack" someone's account, it's a scam and will give them access to your Facebook account. font-family:helvetica; font-size:20px;  @ https://static.xx.fbcdn.net/rsrc.php/v4/y6/r/iIDp7JB-5gT.js:243
+[  272796ms] [LOG] 
+%cSee https://www.facebook.com/selfxss for more information. font-family:helvetica; font-size:20px;  @ https://static.xx.fbcdn.net/rsrc.php/v4/y6/r/iIDp7JB-5gT.js:243
+[  272796ms] [LOG] 
+%c  @ https://static.xx.fbcdn.net/rsrc.php/v4/y6/r/iIDp7JB-5gT.js:243

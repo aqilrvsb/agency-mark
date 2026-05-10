@@ -1,0 +1,101 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - link "AdSolution Agency" [ref=e5] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e7]
+        - generic [ref=e10]:
+          - generic [ref=e11]: AdSolution
+          - generic [ref=e12]: Agency
+      - navigation [ref=e13]:
+        - link "Overview" [ref=e14] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e15]
+          - text: Overview
+        - link "Clients" [ref=e20] [cursor=pointer]:
+          - /url: /clients
+          - img [ref=e21]
+          - text: Clients
+        - link "Campaigns" [ref=e26] [cursor=pointer]:
+          - /url: /campaigns
+          - img [ref=e27]
+          - text: Campaigns
+        - link "Analytics" [ref=e30] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e31]
+          - text: Analytics
+        - link "Reports" [ref=e33] [cursor=pointer]:
+          - /url: /reports
+          - img [ref=e34]
+          - text: Reports
+        - link "Invoices" [ref=e37] [cursor=pointer]:
+          - /url: /invoices
+          - img [ref=e38]
+          - text: Invoices
+        - link "Notifications" [ref=e41] [cursor=pointer]:
+          - /url: /notifications
+          - img [ref=e42]
+          - text: Notifications
+        - link "Staff" [ref=e45] [cursor=pointer]:
+          - /url: /staff
+          - img [ref=e46]
+          - text: Staff
+        - link "Activity Logs" [ref=e58] [cursor=pointer]:
+          - /url: /activity
+          - img [ref=e59]
+          - text: Activity Logs
+        - link "Settings" [ref=e61] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e62]
+          - text: Settings
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]: Signed in as
+          - generic [ref=e68]: aqil
+          - generic [ref=e69]: bod
+        - button "Sign out" [ref=e70]:
+          - img [ref=e71]
+          - text: Sign out
+    - main [ref=e74]:
+      - generic [ref=e86]:
+        - generic [ref=e87]:
+          - heading "Welcome back, aqil" [level=1] [ref=e88]
+          - paragraph [ref=e89]: Overview untuk 7 hari terakhir · 0 clients aktif
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - generic [ref=e92]:
+              - generic [ref=e93]: Spend (7d)
+              - img [ref=e94]
+            - generic [ref=e97]: RM 0
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - generic [ref=e100]: Impressions
+              - img [ref=e101]
+            - generic [ref=e104]: "0"
+          - generic [ref=e105]:
+            - generic [ref=e106]:
+              - generic [ref=e107]: CTR
+              - img [ref=e108]
+            - generic [ref=e112]: 0%
+          - generic [ref=e113]:
+            - generic [ref=e114]:
+              - generic [ref=e115]: CPA avg
+              - img [ref=e116]
+            - generic [ref=e121]: —
+        - generic [ref=e122]:
+          - generic [ref=e124]:
+            - heading "Top clients (by spend)" [level=2] [ref=e125]
+            - link "No clients yet → click here to add your first" [ref=e127] [cursor=pointer]:
+              - /url: /clients
+          - generic [ref=e128]:
+            - heading "Quick actions" [level=2] [ref=e129]
+            - generic [ref=e130]:
+              - link "📋 Manage clients" [ref=e131] [cursor=pointer]:
+                - /url: /clients
+              - link "📊 View campaigns" [ref=e132] [cursor=pointer]:
+                - /url: /campaigns
+              - link "📈 Open analytics" [ref=e133] [cursor=pointer]:
+                - /url: /analytics
+              - link "💳 Invoices" [ref=e134] [cursor=pointer]:
+                - /url: /invoices
+  - alert [ref=e135]

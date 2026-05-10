@@ -24,8 +24,17 @@ export interface PlatformBreakdown {
   roas: number;
 }
 
+export interface AnnotationItem {
+  id: string;
+  anchor_date: string;
+  body: string;
+  created_at: string;
+  author_name: string | null;
+}
+
 export interface OverviewData {
   brand: { id: string; name: string };
+  annotations: AnnotationItem[];
   range: { start: string; end: string; days: number };
   current: {
     spend: number;
@@ -93,8 +102,14 @@ export async function loadOverviewData(opts: {
   const priorEnd = isoMinusDays(start, 1);
   const priorStart = isoMinusDays(priorEnd, days - 1);
 
-  // Three parallel queries: current, prior, budget, brand_ad_accounts
-  const [{ data: currRows }, { data: priorRows }, { data: budget }, { data: connections }] = await Promise.all([
+  // Five parallel queries: current, prior, budget, brand_ad_accounts, annotations
+  const [
+    { data: currRows },
+    { data: priorRows },
+    { data: budget },
+    { data: connections },
+    { data: annotations },
+  ] = await Promise.all([
     supabase
       .from("ad_data")
       .select("platform, date_start, data")
@@ -113,6 +128,13 @@ export async function loadOverviewData(opts: {
       .select("platform")
       .eq("brand_id", brandId)
       .eq("is_active", true),
+    supabase
+      .from("chart_annotations")
+      .select("id, anchor_date, body, created_at, users(full_name)")
+      .eq("brand_id", brandId)
+      .gte("anchor_date", start)
+      .lte("anchor_date", end)
+      .order("anchor_date", { ascending: true }),
   ]);
 
   const currTotals = summarize(aggregateAdData(currRows ?? [], "campaign"));
@@ -167,8 +189,20 @@ export async function loadOverviewData(opts: {
   const bestCampaign =
     [...allCampaigns].filter((r) => r.spend > 0 && r.roas > 0).sort((a, b) => b.roas - a.roas)[0] ?? null;
 
+  const annotationItems: AnnotationItem[] = (annotations ?? []).map((a) => {
+    const u = (a as { users?: { full_name?: string } | null }).users;
+    return {
+      id: a.id as string,
+      anchor_date: a.anchor_date as string,
+      body: a.body as string,
+      created_at: a.created_at as string,
+      author_name: u?.full_name ?? null,
+    };
+  });
+
   return {
     brand: { id: brandId, name: brand.name as string },
+    annotations: annotationItems,
     range: { start, end, days },
     current: {
       spend: currTotals.spend,

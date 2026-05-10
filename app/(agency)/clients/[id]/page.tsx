@@ -2,11 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAgencyStaff } from "@/lib/auth/guards";
 import { notFound } from "next/navigation";
 import { Card, CardTitle, CardDescription, CardHeader } from "@/components/ui/card";
-import { Building2, Wallet, BarChart3, Users, StickyNote } from "lucide-react";
+import { Building2, Wallet, BarChart3, Users, StickyNote, Pin } from "lucide-react";
 import { AddAdAccountForm } from "./add-ad-account-form";
 import { AssignClientForm } from "./assign-client-form";
 import { TopupForm } from "./topup-form";
 import { NotesSection } from "./notes-section";
+import { ChartAnnotationsManager } from "@/components/client/chart-annotations-form";
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,7 +27,8 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
   last30.setDate(last30.getDate() - 30);
   const last30Iso = last30.toISOString().slice(0, 10);
 
-  const [{ data: adAccounts }, { data: adData }, { data: budget }, { data: topups }, { data: clientUser }, { data: rawNotes }] = await Promise.all([
+  const today = new Date().toISOString().slice(0, 10);
+  const [{ data: adAccounts }, { data: adData }, { data: budget }, { data: topups }, { data: clientUser }, { data: rawNotes }, { data: rawAnnotations }] = await Promise.all([
     supabase.from("brand_ad_accounts").select("*").eq("brand_id", id),
     supabase.from("ad_data").select("platform, date_start, data").eq("brand_id", id).gte("date_start", last30Iso).order("date_start", { ascending: false }),
     supabase.from("client_budgets").select("*").eq("brand_id", id).maybeSingle(),
@@ -35,7 +37,24 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       ? supabase.from("users").select("email, full_name").eq("id", brand.assigned_client_user_id as string).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from("brand_notes").select("id, body, created_at, author_id").eq("brand_id", id).order("created_at", { ascending: false }).limit(20),
+    supabase
+      .from("chart_annotations")
+      .select("id, anchor_date, body, created_at, users(full_name)")
+      .eq("brand_id", id)
+      .gte("anchor_date", last30Iso)
+      .lte("anchor_date", today)
+      .order("anchor_date", { ascending: true }),
   ]);
+  const annotations = (rawAnnotations ?? []).map((a) => {
+    const u = (a as { users?: { full_name?: string } | null }).users;
+    return {
+      id: a.id as string,
+      anchor_date: a.anchor_date as string,
+      body: a.body as string,
+      created_at: a.created_at as string,
+      author_name: u?.full_name ?? null,
+    };
+  });
 
   const noteAuthorIds = [...new Set((rawNotes ?? []).map((n) => n.author_id).filter(Boolean) as string[])];
   const { data: noteAuthors } = noteAuthorIds.length
@@ -200,13 +219,27 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         </Card>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><StickyNote className="w-5 h-5" /> Notes & activity</CardTitle>
+            <CardTitle className="flex items-center gap-2"><StickyNote className="w-5 h-5" /> Notes &amp; activity</CardTitle>
             <CardDescription>Internal notes for the team. Clients don&apos;t see this.</CardDescription>
           </CardHeader>
           <NotesSection brandId={id} initialNotes={notes} />
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Pin className="w-5 h-5" /> Chart annotations</CardTitle>
+            <CardDescription>Pin a date with a short note — it appears as a marker on the client&apos;s performance chart.</CardDescription>
+          </CardHeader>
+          <ChartAnnotationsManager
+            brandId={id}
+            rangeStart={last30Iso}
+            rangeEnd={today}
+            annotations={annotations}
+            canEdit={true}
+          />
         </Card>
       </div>
     </div>

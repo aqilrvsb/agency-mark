@@ -48,6 +48,7 @@ export async function loadBrandLevelData(opts: {
       deltas: null,
       daily: [] as DailyPoint[],
       priorDaily: [] as DailyPoint[],
+      annotations: [] as { id: string; anchor_date: string; body: string; created_at: string; author_name: string | null }[],
       range: null,
     };
   }
@@ -64,7 +65,7 @@ export async function loadBrandLevelData(opts: {
   const priorEnd = isoMinusDays(startIso, 1);
   const priorStart = isoMinusDays(priorEnd, days - 1);
 
-  const [{ data: currData }, { data: priorData }] = await Promise.all([
+  const [{ data: currData }, { data: priorData }, { data: annotations }] = await Promise.all([
     supabase
       .from("ad_data")
       .select("platform, date_start, data")
@@ -79,6 +80,13 @@ export async function loadBrandLevelData(opts: {
       .in("platform", opts.platforms)
       .gte("date_start", priorStart)
       .lte("date_start", priorEnd),
+    supabase
+      .from("chart_annotations")
+      .select("id, anchor_date, body, created_at, users(full_name)")
+      .eq("brand_id", brand.id as string)
+      .gte("anchor_date", startIso)
+      .lte("anchor_date", endIso)
+      .order("anchor_date", { ascending: true }),
   ]);
 
   const rows = aggregateAdData(currData ?? [], opts.level);
@@ -118,6 +126,17 @@ export async function loadBrandLevelData(opts: {
     cpm: deltaPct(totals.cpm, priorTotals.cpm),
   };
 
+  const annotationItems = (annotations ?? []).map((a) => {
+    const u = (a as { users?: { full_name?: string } | null }).users;
+    return {
+      id: a.id as string,
+      anchor_date: a.anchor_date as string,
+      body: a.body as string,
+      created_at: a.created_at as string,
+      author_name: u?.full_name ?? null,
+    };
+  });
+
   return {
     brand: { id: brand.id as string, name: brand.name as string },
     rows,
@@ -126,6 +145,7 @@ export async function loadBrandLevelData(opts: {
     deltas,
     daily,
     priorDaily,
+    annotations: annotationItems,
     range: { start: startIso, end: endIso, days },
   };
 }

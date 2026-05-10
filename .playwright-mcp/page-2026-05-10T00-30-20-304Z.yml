@@ -1,0 +1,107 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - link "AdSolution Client" [ref=e5] [cursor=pointer]:
+      - /url: /client/overview
+      - img [ref=e7]
+      - generic [ref=e10]:
+        - generic [ref=e11]: AdSolution
+        - generic [ref=e12]: Client
+    - navigation [ref=e13]:
+      - list [ref=e14]:
+        - listitem [ref=e15]:
+          - link "Overview" [ref=e16] [cursor=pointer]:
+            - /url: /client/overview
+            - img [ref=e17]
+            - text: Overview
+        - listitem [ref=e22]:
+          - link "Connect Ads" [ref=e23] [cursor=pointer]:
+            - /url: /client/connections
+            - img [ref=e24]
+            - text: Connect Ads
+      - generic [ref=e26]:
+        - generic [ref=e27]: Data sources
+        - list [ref=e28]:
+          - listitem [ref=e29]:
+            - button "Facebook Ads" [ref=e30]:
+              - generic [ref=e31]: Facebook Ads
+              - img [ref=e33]
+          - listitem [ref=e35]:
+            - button "Google Ads" [ref=e36]:
+              - generic [ref=e37]: Google Ads
+              - img [ref=e39]
+          - listitem [ref=e41]:
+            - button "TikTok Ads" [ref=e42]:
+              - generic [ref=e43]: TikTok Ads
+              - img [ref=e45]
+      - generic [ref=e47]:
+        - generic [ref=e48]: Account
+        - list [ref=e49]:
+          - listitem [ref=e50]:
+            - link "Budget" [ref=e51] [cursor=pointer]:
+              - /url: /client/budget
+              - img [ref=e52]
+              - text: Budget
+          - listitem [ref=e55]:
+            - link "Reports" [ref=e56] [cursor=pointer]:
+              - /url: /client/reports
+              - img [ref=e57]
+              - text: Reports
+          - listitem [ref=e60]:
+            - link "Notifications" [ref=e61] [cursor=pointer]:
+              - /url: /client/notifications
+              - img [ref=e62]
+              - text: Notifications
+          - listitem [ref=e65]:
+            - link "Support" [ref=e66] [cursor=pointer]:
+              - /url: /client/support
+              - img [ref=e67]
+              - text: Support
+          - listitem [ref=e69]:
+            - link "Settings" [ref=e70] [cursor=pointer]:
+              - /url: /client/settings
+              - img [ref=e71]
+              - text: Settings
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: Signed in as
+        - generic [ref=e77]: Test Client User
+        - generic [ref=e78]: testclient@brandx.my
+      - button "Sign out" [ref=e79]:
+        - img [ref=e80]
+        - text: Sign out
+  - main [ref=e83]:
+    - generic [ref=e84]:
+      - generic [ref=e85]:
+        - heading "Test Brand X" [level=1] [ref=e86]
+        - paragraph [ref=e87]: Performance dashboard · 30 hari terakhir
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - generic [ref=e91]: Spend
+            - img [ref=e92]
+          - generic [ref=e95]: RM 0
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - generic [ref=e98]: Conversions
+            - img [ref=e99]
+          - generic [ref=e103]: "0"
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - generic [ref=e106]: ROAS
+            - img [ref=e107]
+          - generic [ref=e110]: —
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - generic [ref=e113]: Impressions
+            - img [ref=e114]
+          - generic [ref=e116]: "0"
+      - generic [ref=e117]:
+        - generic [ref=e118]:
+          - heading "Budget" [level=2] [ref=e119]
+          - generic [ref=e120]:
+            - generic [ref=e121]: Current balance
+            - generic [ref=e122]: RM 0
+            - generic [ref=e123]: "Total topup: RM 0 · Spent: RM 0"
+        - generic [ref=e124]:
+          - heading "Recent activity" [level=2] [ref=e125]
+          - generic [ref=e127]: Tiada data lagi.

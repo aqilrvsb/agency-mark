@@ -1,0 +1,92 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - button "aqilrvsb@gmail.com aqil aqilrvsb@gmail.com" [ref=e8] [cursor=pointer]:
+        - img "aqilrvsb@gmail.com" [ref=e9]
+        - generic [ref=e10]:
+          - paragraph [ref=e12]: aqil
+          - paragraph [ref=e13]: aqilrvsb@gmail.com
+        - img [ref=e14]
+      - list [ref=e19]:
+        - listitem [ref=e20]:
+          - button "Connections" [ref=e21] [cursor=pointer]:
+            - img [ref=e23]
+            - generic [ref=e30]: Connections
+        - listitem [ref=e31]:
+          - button "Posts" [ref=e32] [cursor=pointer]:
+            - img [ref=e34]
+            - generic [ref=e37]: Posts
+            - img [ref=e38]
+        - listitem [ref=e40]:
+          - button "Analytics" [ref=e41] [cursor=pointer]:
+            - img [ref=e43]
+            - generic [ref=e44]: Analytics
+        - listitem [ref=e45]:
+          - button "Inbox" [ref=e46] [cursor=pointer]:
+            - img [ref=e48]
+            - generic [ref=e50]: Inbox
+            - img [ref=e51]
+        - listitem [ref=e53]:
+          - button "Ads" [ref=e54] [cursor=pointer]:
+            - img [ref=e56]
+            - generic [ref=e59]: Ads
+        - listitem [ref=e60]:
+          - button "API Keys" [ref=e61] [cursor=pointer]:
+            - img [ref=e63]
+            - generic [ref=e67]: API Keys
+        - listitem [ref=e68]:
+          - button "Users" [ref=e69] [cursor=pointer]:
+            - img [ref=e71]
+            - generic [ref=e76]: Users
+        - listitem [ref=e77]:
+          - button "Webhooks" [ref=e78] [cursor=pointer]:
+            - img [ref=e80]
+            - generic [ref=e84]: Webhooks
+        - listitem [ref=e85]:
+          - button "Logs" [ref=e86] [cursor=pointer]:
+            - img [ref=e88]
+            - generic [ref=e90]: Logs
+        - listitem [ref=e91]:
+          - button "Settings" [ref=e92] [cursor=pointer]:
+            - img [ref=e94]
+            - generic [ref=e95]: Settings
+      - generic [ref=e97]:
+        - link "Documentation" [ref=e98] [cursor=pointer]:
+          - /url: https://docs.zernio.com
+          - img [ref=e99]
+          - generic [ref=e103]: Documentation
+          - img [ref=e104]
+        - button "Switch to dark mode" [ref=e107] [cursor=pointer]:
+          - img [ref=e108]
+    - main [ref=e111]:
+      - generic [ref=e113]:
+        - generic [ref=e300]:
+          - generic [ref=e301]:
+            - heading "Connections" [level=1] [ref=e302]
+            - paragraph [ref=e303]: Manage profiles and platform integrations
+          - generic [ref=e304]:
+            - button "New Connection" [ref=e305] [cursor=pointer]:
+              - img [ref=e306]
+              - text: New Connection
+            - button "New Profile" [ref=e307] [cursor=pointer]
+        - generic [ref=e308]:
+          - generic [ref=e309]:
+            - generic [ref=e310]:
+              - heading "Platforms" [level=2] [ref=e311]
+              - button "All profiles" [ref=e314] [cursor=pointer]:
+                - generic [ref=e316]: All profiles
+                - img [ref=e317]
+            - generic [ref=e319]:
+              - button "All platforms" [ref=e320] [cursor=pointer]:
+                - generic [ref=e321]: All platforms
+                - img [ref=e322]
+              - button "All statuses" [ref=e324] [cursor=pointer]:
+                - generic [ref=e325]: All statuses
+                - img [ref=e326]
+          - generic [ref=e330]:
+            - paragraph [ref=e331]: No accounts connected yet.
+            - button "Connect an account" [ref=e332] [cursor=pointer]:
+              - img [ref=e333]
+              - text: Connect an account
+  - alert [ref=e158]
+  - button "Open chat" [ref=e159] [cursor=pointer]

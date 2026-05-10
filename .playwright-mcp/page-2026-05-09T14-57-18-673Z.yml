@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - link "AdSolution" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - img [ref=e6]
+      - generic [ref=e9]: AdSolution
+    - generic [ref=e10]:
+      - heading "Masuk semula" [level=1] [ref=e11]
+      - paragraph [ref=e12]: Masukkan email dan password untuk akses dashboard.
+      - generic [ref=e27]:
+        - img [ref=e28]
+        - generic [ref=e30]: Invalid login credentials
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]: Email
+          - textbox [ref=e16]: aqil@gmail.com
+        - generic [ref=e17]:
+          - generic [ref=e18]: Password
+          - textbox [ref=e19]: aqiL@gmail.com
+          - link "Lupa password?" [ref=e20] [cursor=pointer]:
+            - /url: /forgot-password
+        - button "Masuk" [ref=e21]:
+          - text: Masuk
+          - img [ref=e31]
+      - generic [ref=e24]:
+        - text: Belum ada akaun?
+        - link "Daftar agensi" [ref=e25] [cursor=pointer]:
+          - /url: /register
+  - alert [ref=e26]

@@ -1,0 +1,282 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - complementary "Skip links" [ref=e5]:
+        - link "Skip to main content" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: Skip to main content
+        - button "Keyboard shortcuts" [ref=e8]:
+          - generic [ref=e9]: Keyboard shortcuts
+        - link "Accessibility Help external, opens new window" [ref=e10] [cursor=pointer]:
+          - /url: https://cloud.google.com/docs/accessibility?hl=en_US
+          - generic [ref=e11]:
+            - text: Accessibility Help
+            - generic "external, opens new window" [ref=e12]:
+              - img "external, opens new window" [ref=e13]:
+                - img [ref=e14]
+        - link "Accessibility Feedback external, opens new window" [ref=e16] [cursor=pointer]:
+          - /url: https://support.google.com/accessibility/contact/feedback?hl=en_US
+          - generic [ref=e17]:
+            - text: Accessibility Feedback
+            - generic "external, opens new window" [ref=e18]:
+              - img "external, opens new window" [ref=e19]:
+                - img [ref=e20]
+      - banner [ref=e23]:
+        - generic [ref=e24]:
+          - navigation [ref=e27]:
+            - button "Navigation menu (.)" [ref=e28] [cursor=pointer]:
+              - img [ref=e30]
+          - link "Google Cloud Platform Home" [ref=e32] [cursor=pointer]:
+            - /url: /
+            - generic:
+              - img
+          - button "No project selected. Hit enter to select a project, folder, or organization." [ref=e40]
+        - search "Google Cloud Platform" [ref=e46]:
+          - combobox [ref=e47]:
+            - searchbox "Enter query to search for resources, docs, products, and more" [ref=e48]
+          - button "See all search results" [disabled]:
+            - generic:
+              - img
+            - generic: Search
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e53]:
+              - button "Activate Cloud Shell (G then S)" [disabled]:
+                - generic:
+                  - img
+            - button "Open notifications" [ref=e57] [cursor=pointer]:
+              - img [ref=e59]
+            - button "Settings and utilities" [ref=e65] [cursor=pointer]:
+              - img [ref=e67]
+          - img [ref=e71]
+    - generic [ref=e91]:
+      - navigation "IAM & Admin" [ref=e98]:
+        - generic [ref=e99]:
+          - heading "IAM & Admin" [level=2] [ref=e101]:
+            - link "IAM & Admin" [ref=e102] [cursor=pointer]:
+              - /url: /iam-admin
+              - img [ref=e105]
+              - generic [ref=e109]: IAM & Admin
+          - list "IAM, 1 of 22 More options PAM, 2 of 22 More options Principal Access Boundary, 3 of 22 More options Security Insights, 4 of 22 More options Identity & Organization, 5 of 22 More options Policy Troubleshooter, 6 of 22 More options Policy Analyzer, 7 of 22 More options Organization Policies, 8 of 22 More options Service Accounts, 9 of 22 More options Workload Identity Federation, 10 of 22 More options Workforce Identity Federation, 11 of 22 More options Labels, 12 of 22 More options Tags, 13 of 22 More options Settings, 14 of 22 More options Privacy & Security, 15 of 22 More options Identity-Aware Proxy, 16 of 22 More options Roles, 17 of 22 More options Audit logs, 18 of 22 More options Asset Inventory, 19 of 22 More options Quotas & System Limits, 20 of 22 More options Essential Contacts, 21 of 22 More options Groups, 22 of 22 More options" [ref=e113]:
+            - listitem [ref=e114]:
+              - generic [ref=e117]:
+                - link "IAM, 1 of 22" [ref=e118] [cursor=pointer]:
+                  - /url: /iam-admin/iam
+                  - generic [ref=e119]:
+                    - img [ref=e122]
+                    - generic [ref=e124]: IAM
+                - button "More options" [ref=e126] [cursor=pointer]:
+                  - img [ref=e128]
+            - listitem [ref=e130]:
+              - generic [ref=e133]:
+                - link "PAM, 2 of 22" [ref=e134] [cursor=pointer]:
+                  - /url: /iam-admin/pam
+                  - generic [ref=e135]:
+                    - img [ref=e138]
+                    - generic [ref=e143]: PAM
+                - button "More options" [ref=e145] [cursor=pointer]:
+                  - img [ref=e147]
+            - listitem [ref=e149]:
+              - generic [ref=e152]:
+                - link "Principal Access Boundary, 3 of 22" [ref=e153] [cursor=pointer]:
+                  - /url: /iam-admin/principal-access-boundary
+                  - generic [ref=e154]:
+                    - img [ref=e157]
+                    - generic [ref=e159]: Principal Access Boundary
+                - button "More options" [ref=e161] [cursor=pointer]:
+                  - img [ref=e163]
+            - listitem [ref=e165]:
+              - generic [ref=e168]:
+                - link "Security Insights, 4 of 22" [ref=e169] [cursor=pointer]:
+                  - /url: /iam-admin/security-insights
+                  - generic [ref=e170]:
+                    - img [ref=e173]
+                    - generic [ref=e175]:
+                      - text: Security Insights
+                      - img "preview" [ref=e177]
+                - button "More options" [ref=e179] [cursor=pointer]:
+                  - img [ref=e181]
+            - listitem [ref=e183]:
+              - generic [ref=e186]:
+                - link "Identity & Organization, 5 of 22" [ref=e187] [cursor=pointer]:
+                  - /url: /iam-admin/cloudidentity/consumer
+                  - generic [ref=e188]:
+                    - img [ref=e191]
+                    - generic [ref=e193]: Identity & Organization
+                - button "More options" [ref=e195] [cursor=pointer]:
+                  - img [ref=e197]
+            - listitem [ref=e199]:
+              - generic [ref=e202]:
+                - link "Policy Troubleshooter, 6 of 22" [ref=e203] [cursor=pointer]:
+                  - /url: /iam-admin/troubleshooter
+                  - generic [ref=e204]:
+                    - img [ref=e207]
+                    - generic [ref=e209]: Policy Troubleshooter
+                - button "More options" [ref=e211] [cursor=pointer]:
+                  - img [ref=e213]
+            - listitem [ref=e215]:
+              - generic [ref=e218]:
+                - link "Policy Analyzer, 7 of 22" [ref=e219] [cursor=pointer]:
+                  - /url: /iam-admin/analyzer
+                  - generic [ref=e220]:
+                    - img [ref=e223]
+                    - generic [ref=e225]: Policy Analyzer
+                - button "More options" [ref=e227] [cursor=pointer]:
+                  - img [ref=e229]
+            - listitem [ref=e231]:
+              - generic [ref=e234]:
+                - link "Organization Policies, 8 of 22" [ref=e235] [cursor=pointer]:
+                  - /url: /iam-admin/orgpolicies
+                  - generic [ref=e236]:
+                    - img [ref=e239]
+                    - generic [ref=e241]: Organization Policies
+                - button "More options" [ref=e243] [cursor=pointer]:
+                  - img [ref=e245]
+            - listitem [ref=e247]:
+              - generic [ref=e250]:
+                - link "Service Accounts, 9 of 22" [ref=e251] [cursor=pointer]:
+                  - /url: /iam-admin/serviceaccounts
+                  - generic [ref=e252]:
+                    - img [ref=e255]
+                    - generic [ref=e257]: Service Accounts
+                - button "More options" [ref=e259] [cursor=pointer]:
+                  - img [ref=e261]
+            - listitem [ref=e263]:
+              - generic [ref=e266]:
+                - link "Workload Identity Federation, 10 of 22" [ref=e267] [cursor=pointer]:
+                  - /url: /iam-admin/workload-identity-pools
+                  - generic [ref=e268]:
+                    - img [ref=e271]
+                    - generic [ref=e274]: Workload Identity Federation
+                - button "More options" [ref=e276] [cursor=pointer]:
+                  - img [ref=e278]
+            - listitem [ref=e280]:
+              - generic [ref=e283]:
+                - link "Workforce Identity Federation, 11 of 22" [ref=e284] [cursor=pointer]:
+                  - /url: /iam-admin/workforce-identity-pools
+                  - generic [ref=e285]:
+                    - img [ref=e288]
+                    - generic [ref=e290]: Workforce Identity Federation
+                - button "More options" [ref=e292] [cursor=pointer]:
+                  - img [ref=e294]
+            - listitem [ref=e296]:
+              - generic [ref=e299]:
+                - link "Labels, 12 of 22" [ref=e300] [cursor=pointer]:
+                  - /url: /iam-admin/labels
+                  - generic [ref=e301]:
+                    - img [ref=e304]
+                    - generic [ref=e306]: Labels
+                - button "More options" [ref=e308] [cursor=pointer]:
+                  - img [ref=e310]
+            - listitem [ref=e312]:
+              - generic [ref=e315]:
+                - link "Tags, 13 of 22" [ref=e316] [cursor=pointer]:
+                  - /url: /iam-admin/tags
+                  - generic [ref=e317]:
+                    - img [ref=e320]
+                    - generic [ref=e322]: Tags
+                - button "More options" [ref=e324] [cursor=pointer]:
+                  - img [ref=e326]
+            - listitem [ref=e328]:
+              - generic [ref=e331]:
+                - link "Settings, 14 of 22" [ref=e332] [cursor=pointer]:
+                  - /url: /iam-admin/settings
+                  - generic [ref=e333]:
+                    - img [ref=e336]
+                    - generic [ref=e338]: Settings
+                - button "More options" [ref=e340] [cursor=pointer]:
+                  - img [ref=e342]
+            - listitem [ref=e344]:
+              - generic [ref=e347]:
+                - link "Privacy & Security, 15 of 22" [ref=e348] [cursor=pointer]:
+                  - /url: /iam-admin/privacy
+                  - generic [ref=e349]:
+                    - img [ref=e352]
+                    - generic [ref=e354]: Privacy & Security
+                - button "More options" [ref=e356] [cursor=pointer]:
+                  - img [ref=e358]
+            - listitem [ref=e360]:
+              - generic [ref=e363]:
+                - link "Identity-Aware Proxy, 16 of 22" [ref=e364] [cursor=pointer]:
+                  - /url: /iam-admin/iap
+                  - generic [ref=e365]:
+                    - img [ref=e368]
+                    - generic [ref=e370]: Identity-Aware Proxy
+                - button "More options" [ref=e372] [cursor=pointer]:
+                  - img [ref=e374]
+            - listitem [ref=e376]:
+              - generic [ref=e379]:
+                - link "Roles, 17 of 22" [ref=e380] [cursor=pointer]:
+                  - /url: /iam-admin/roles
+                  - generic [ref=e381]:
+                    - img [ref=e384]
+                    - generic [ref=e386]: Roles
+                - button "More options" [ref=e388] [cursor=pointer]:
+                  - img [ref=e390]
+            - listitem [ref=e392]:
+              - generic [ref=e395]:
+                - link "Audit logs, 18 of 22" [ref=e396] [cursor=pointer]:
+                  - /url: /iam-admin/audit
+                  - generic [ref=e397]:
+                    - img [ref=e400]
+                    - generic [ref=e402]: Audit logs
+                - button "More options" [ref=e404] [cursor=pointer]:
+                  - img [ref=e406]
+            - listitem [ref=e408]:
+              - generic [ref=e411]:
+                - link "Asset Inventory, 19 of 22" [ref=e412] [cursor=pointer]:
+                  - /url: /iam-admin/asset-inventory
+                  - generic [ref=e413]:
+                    - img [ref=e416]
+                    - generic [ref=e418]: Asset Inventory
+                - button "More options" [ref=e420] [cursor=pointer]:
+                  - img [ref=e422]
+            - listitem [ref=e424]:
+              - generic [ref=e427]:
+                - link "Quotas & System Limits, 20 of 22" [ref=e428] [cursor=pointer]:
+                  - /url: /iam-admin/quotas
+                  - generic [ref=e429]:
+                    - img [ref=e432]
+                    - generic [ref=e434]: Quotas & System Limits
+                - button "More options" [ref=e436] [cursor=pointer]:
+                  - img [ref=e438]
+            - listitem [ref=e440]:
+              - generic [ref=e443]:
+                - link "Essential Contacts, 21 of 22" [ref=e444] [cursor=pointer]:
+                  - /url: /iam-admin/essential-contacts
+                  - generic [ref=e445]:
+                    - img [ref=e448]
+                    - generic [ref=e450]: Essential Contacts
+                - button "More options" [ref=e452] [cursor=pointer]:
+                  - img [ref=e454]
+            - listitem [ref=e456]:
+              - generic [ref=e459]:
+                - link "Groups, 22 of 22" [ref=e460] [cursor=pointer]:
+                  - /url: /iam-admin/groups
+                  - generic [ref=e461]:
+                    - img [ref=e464]
+                    - generic [ref=e466]: Groups
+                - button "More options" [ref=e468] [cursor=pointer]:
+                  - img [ref=e470]
+          - generic [ref=e475]:
+            - link "Hierarchically manage resources by project, folder, and organization." [ref=e477] [cursor=pointer]:
+              - /url: /cloud-resource-manager
+              - img [ref=e479]:
+                - img [ref=e480]
+              - generic [ref=e482]: Manage Resources
+            - separator [ref=e483]
+            - button "Explore IAM & Admin Release Notes" [ref=e485]:
+              - img [ref=e487]:
+                - img [ref=e488]
+              - generic [ref=e490]: Release Notes
+          - button "Toggle IAM & Admin navigation menu" [pressed] [ref=e492] [cursor=pointer]:
+            - img [ref=e495]
+      - main [ref=e498]:
+        - progressbar [ref=e506]:
+          - img [ref=e508]
+          - generic [ref=e511]:
+            - img [ref=e513]
+            - img [ref=e516]
+            - img [ref=e519]
+  - iframe [ref=e522]:
+    
