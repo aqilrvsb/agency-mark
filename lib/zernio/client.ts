@@ -83,7 +83,8 @@ export interface ZernioAdMetrics {
 }
 
 export interface ZernioAd {
-  id: string; // Zernio internal ID (ObjectId)
+  _id: string; // Zernio internal ID (Mongo ObjectId) — actual field name on the wire
+  id?: string; // Some endpoints alias as `id`; treat as optional
   platformAdId?: string;
   name?: string;
   platform: ZernioAdsPlatform;

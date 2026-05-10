@@ -116,8 +116,10 @@ export async function syncBrandWindow(opts: {
           });
           adsScanned += r.ads.length;
           for (const ad of r.ads) {
+            const adId = ad._id ?? ad.id;
+            if (!adId) continue;
             try {
-              const analytics = await zernio.getAdAnalytics(ad.id, {
+              const analytics = await zernio.getAdAnalytics(adId, {
                 fromDate: opts.fromDate,
                 toDate: opts.toDate,
               });
@@ -132,7 +134,7 @@ export async function syncBrandWindow(opts: {
                 }));
               }
             } catch (e) {
-              errors.push(`getAdAnalytics(${ad.id}): ${e instanceof Error ? e.message : String(e)}`);
+              errors.push(`getAdAnalytics(${adId}): ${e instanceof Error ? e.message : String(e)}`);
             }
           }
           if (r.pagination.page >= r.pagination.pages) break;
@@ -223,15 +225,18 @@ function toRow(p: {
     cpm: num(m.cpm),
     cpa: num(m.cpa),
     roas: num(m.roas),
-    // ad / campaign context
-    ad_id: p.ad.id,
+    // ad / campaign context — Zernio actually returns platformCampaignId /
+    // platformAdSetId (the Meta IDs), not campaignId / adSetId. Read both.
+    ad_id: p.ad._id ?? p.ad.id ?? null,
     ad_name: p.ad.name ?? null,
-    platform_ad_id: p.ad.platformAdId ?? null,
-    campaign_id: p.ad.campaignId ?? null,
+    platform_ad_id: (p.ad as { platformAdId?: string }).platformAdId ?? null,
+    campaign_id: (p.ad as { platformCampaignId?: string }).platformCampaignId ?? p.ad.campaignId ?? null,
     campaign_name: p.ad.campaignName ?? null,
-    adset_id: p.ad.adSetId ?? null,
+    adset_id: (p.ad as { platformAdSetId?: string }).platformAdSetId ?? p.ad.adSetId ?? null,
     adset_name: p.ad.adSetName ?? null,
     status: p.ad.status ?? p.ad.effectiveStatus ?? null,
+    creative_thumbnail: (p.ad as { creative?: { thumbnailUrl?: string } }).creative?.thumbnailUrl ?? null,
+    creative_body: (p.ad as { creative?: { body?: string } }).creative?.body ?? null,
   } satisfies Record<string, unknown>;
 
   return {
@@ -240,7 +245,7 @@ function toRow(p: {
     platform: p.internalPlatform,
     platform_ad_account_id: p.adAccount.id,
     ad_account_currency: p.adAccount.currency ?? null,
-    ad_id: p.ad.id,
+    ad_id: p.ad._id ?? p.ad.id ?? null,
     date_start: m.date,
     date_end: m.date,
     data: data as unknown as Json,
