@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { seedDefaultTemplates } from "@/lib/templates/seed-defaults";
+import { getZernio, emailTag } from "@/lib/zernio/client";
 
 interface Body {
   fullName: string;
@@ -99,7 +100,31 @@ export async function POST(req: Request) {
   // exists. Non-fatal if it fails — rerunnable.
   await admin.from("companies").update({ owner_user_id: userId }).eq("id", company.id);
 
-  // 4. Auto-create the marketer's default brand (1:1 with the user)
+  // 4a. Find or create a Zernio profile, scoped by the fighter's email
+  // so re-registrations with the same email reuse the existing profile
+  // (avoids the "Aqil Fighter Test (AdSolution)" duplicates the user
+  // pointed out). The lookup uses an embedded `[fighter:<email>]` tag
+  // in the Zernio profile description.
+  let zernioProfileId: string | null = null;
+  try {
+    const zernio = getZernio();
+    const existing = await zernio.findProfileByEmail(email);
+    if (existing) {
+      zernioProfileId = existing._id;
+    } else {
+      const created = await zernio.createProfile({
+        name: `${fullName} (AdSolution)`,
+        description: `${emailTag(email)} Auto-created for AdSolution marketer ${userId}`,
+      });
+      zernioProfileId = created._id;
+    }
+  } catch (e) {
+    // Non-fatal — the connect flow can lazily create one later if this
+    // fails (network blip, Zernio outage, paywall on free plan, etc.)
+    console.error("[register-marketer] zernio profile lookup/create failed:", (e as Error).message);
+  }
+
+  // 4b. Auto-create the marketer's default brand (1:1 with the user)
   const { data: brand, error: brandError } = await admin
     .from("brands")
     .insert({
@@ -108,6 +133,7 @@ export async function POST(req: Request) {
       is_active: true,
       owner_user_id: userId,
       assigned_client_user_id: userId, // marketer IS their own client for /client/* routes
+      zernio_profile_id: zernioProfileId,
     })
     .select()
     .single();

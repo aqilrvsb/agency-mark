@@ -368,15 +368,33 @@ export class ZernioClient {
     return res as { _id: string; name: string };
   }
 
-  async listProfiles(): Promise<{ profiles: { _id: string; name: string }[] }> {
+  async listProfiles(): Promise<{ profiles: { _id: string; name: string; description?: string }[] }> {
     const res = await this.request<
-      | { profiles?: { _id: string; name: string }[] }
-      | { _id: string; name: string }[]
+      | { profiles?: { _id: string; name: string; description?: string }[] }
+      | { _id: string; name: string; description?: string }[]
     >(`/profiles`);
     if (Array.isArray(res)) return { profiles: res };
     return { profiles: res.profiles ?? [] };
   }
+
+  /**
+   * Find an existing profile whose description matches `<emailTag>` so we
+   * reuse the same Zernio profile across re-registrations of the same
+   * email. Returns null if not found.
+   */
+  async findProfileByEmail(email: string): Promise<{ _id: string; name: string } | null> {
+    const tag = emailTag(email);
+    const { profiles } = await this.listProfiles();
+    const hit = profiles.find((p) => (p.description ?? "").includes(tag));
+    return hit ?? null;
+  }
 }
+
+/** Stable tag we embed in the Zernio profile description for lookup. */
+function emailTag(email: string): string {
+  return `[fighter:${email.toLowerCase().trim()}]`;
+}
+export { emailTag };
 
 let _zernio: ZernioClient | null = null;
 export function getZernio(): ZernioClient {
