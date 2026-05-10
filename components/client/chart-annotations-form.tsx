@@ -94,7 +94,7 @@ export function ChartAnnotationsManager({
               min={rangeStart}
               max={rangeEnd}
               onChange={(e) => setDate(e.target.value)}
-              className="px-3 py-2 rounded-lg bg-white/5 border border-[var(--color-border)] text-sm w-44"
+              className="px-3 py-2 rounded-lg bg-white/5 border border-[var(--color-border)] text-sm w-full sm:w-44 [color-scheme:dark]"
               required
             />
             <input

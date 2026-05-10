@@ -54,14 +54,14 @@ export function DateRangePicker() {
           type="date"
           value={start}
           onChange={(e) => setStart(e.target.value)}
-          className="bg-transparent text-sm focus:outline-none"
+          className="bg-transparent text-sm focus:outline-none [color-scheme:dark]"
         />
         <span className="text-[var(--color-text-muted)]">→</span>
         <input
           type="date"
           value={end}
           onChange={(e) => setEnd(e.target.value)}
-          className="bg-transparent text-sm focus:outline-none"
+          className="bg-transparent text-sm focus:outline-none [color-scheme:dark]"
         />
         <Button size="sm" onClick={() => apply(start, end)}>Apply</Button>
       </div>
