@@ -53,7 +53,10 @@ export async function POST(req: Request) {
     } catch {}
   };
 
-  // 2. Create the marketer's personal workspace (companies row)
+  // 2. Create the marketer's personal workspace (companies row).
+  // owner_user_id intentionally null at this step — we'll update it
+  // once the users row exists, since owner_user_id FK-references
+  // public.users (which doesn't get the row until step 3).
   const workspaceName = `${fullName}'s Workspace`;
   const prefix = fullName
     .toLowerCase()
@@ -67,7 +70,6 @@ export async function POST(req: Request) {
       name: workspaceName,
       prefix,
       is_active: true,
-      owner_user_id: userId,
     })
     .select()
     .single();
@@ -76,7 +78,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: companyError?.message ?? "Gagal create workspace" }, { status: 400 });
   }
 
-  // 3. Create user profile (role='marketer')
+  // 3. Create user profile (role='marketer'). Now that public.users has
+  // a row, we can wire owner_user_id back to companies in step 4.
   const { error: userError } = await admin.from("users").insert({
     id: userId,
     company_id: company.id,
@@ -91,6 +94,10 @@ export async function POST(req: Request) {
     await rollback();
     return NextResponse.json({ error: userError.message }, { status: 400 });
   }
+
+  // 3b. Backfill the workspace's owner_user_id now that the FK target
+  // exists. Non-fatal if it fails — rerunnable.
+  await admin.from("companies").update({ owner_user_id: userId }).eq("id", company.id);
 
   // 4. Auto-create the marketer's default brand (1:1 with the user)
   const { data: brand, error: brandError } = await admin
