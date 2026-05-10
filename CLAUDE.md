@@ -187,18 +187,33 @@ Permissions: `.claude/settings.local.json` has `mcp__zernio__*`, `mcp__playwrigh
 
 ## Test brand + login credentials (development)
 
-- **Brand**: `Test Brand X` — `id = b87305c4-93d8-4476-aa85-dfe4abca65da`
-- **Brand's Zernio Profile**: `id = 69ff63a06e1ae98d6c37fd64`
-- **Connected Page (organic)**: "Generasi Pintar" — Zernio SocialAccount id `69ffd59592b3d8e85faef5fd` (platform `facebook`)
-- **Ads SocialAccount**: id `6a001d2492b3d8e85fb14677` (platform `metaads`) — created via `connect_ads(facebook, profile_id)` with alreadyConnected:true
+Active fighter test account (post Fighter pivot):
+- **Marketer email**: `fighter-test3@adsolution.my`
+- **Brand**: `Aqil Fighter Test` — `id = 60fdc87b-9ba2-4754-98ce-8c8ddcd1ddc3`
+- **Zernio Profile**: `6a00c412d32a19d66e5e1b90` "Aqil Fighter Test (AdSolution)" — created via the email-tag dedupe path during register
+- **Connected SocialAccount** (same-token reuse — see paywall note below):
+  Zernio id `6a00c43d92b3d8e85fb6a556` (platform `facebook`, displayName `Generasi Pintar`, adsStatus `connected`).
+  Registered in `brand_ad_accounts` as `meta_ads` via the same-token path in `sync-connections.ts`.
 - **Meta Ad Accounts under the Page**:
   - `act_497506625022660` "MD Monirka Shifaq" (MYR, Asia/Kuala_Lumpur)
   - `act_313341980326367` "MD Monir" (MYR, Asia/Singapore, business "MUHAMMAD AQIL AZFAR")
-- **Real spend (as of last sync)**: ~RM 9.65 across 3 ads in 2 campaigns (`kolestrol lead` RM 6.60, `New Engagement campaign` RM 3.05). All on 2026-02-03. The other ~140 ads in the account are paused with no spend.
+- **Real spend (Meta side)**: ~RM 9.65 on 2026-02-03 across 3 ads in 2 campaigns
+  (`kolestrol lead` RM 6.60, `New Engagement campaign` RM 3.05). Visible in /v1/ads
+  only after Zernio's `account.ads.initial_sync_completed` webhook fires.
+
+**Same-token paywall recovery** (commit `065ffb1`): the master Zernio account is
+on the free 2-account tier. When `/v1/connect/facebook/ads` would push us over
+the cap (because Zernio counts soft-deleted-in-grace accounts toward the limit),
+the connect route catches the 402 and falls back to discovering the existing
+organic `facebook` SocialAccount (which already carries `adsStatus: 'connected'`
+with full ads_management/ads_read scopes). `sync-connections.ts` registers same-
+token `facebook`/`instagram` accounts as `meta_ads` so the rest of the pipeline
+treats them identically to a `metaads` account. listAdAccounts works fine off
+the organic SocialAccount id.
 
 Logins (passwords reset to known values for testing):
-- **Client**: `testclient@brandx.my` / `TestClient123!`
-- **Agency BOD**: `aqil@gmail.com` / `AgencyAdmin123!`
+- **Marketer (Fighter)**: `fighter-test3@adsolution.my` / `TestFighter123!`
+- **Platform admin**: `aqil@gmail.com` / `AgencyAdmin123!`
 
 To reset a password from Supabase MCP:
 ```sql
