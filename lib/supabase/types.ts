@@ -1107,6 +1107,60 @@ export type Database = {
           },
         ]
       }
+      report_templates: {
+        Row: {
+          archived_at: string | null
+          brand_id: string | null
+          company_id: string
+          created_at: string
+          description: string | null
+          fields: Json
+          filters: Json
+          formulas: Json
+          id: string
+          is_default: boolean
+          level: string
+          name: string
+          owner_user_id: string
+          platform: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          brand_id?: string | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          filters?: Json
+          formulas?: Json
+          id?: string
+          is_default?: boolean
+          level: string
+          name: string
+          owner_user_id: string
+          platform: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          brand_id?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          filters?: Json
+          formulas?: Json
+          id?: string
+          is_default?: boolean
+          level?: string
+          name?: string
+          owner_user_id?: string
+          platform?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           created_at: string | null
