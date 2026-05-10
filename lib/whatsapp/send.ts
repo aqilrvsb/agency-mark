@@ -102,8 +102,8 @@ export async function sendWhatsApp(msg: WhatsAppMessage): Promise<SendResult> {
   // Try in priority order; first configured provider wins.
   const providers = [sendViaTwilio, sendVia360dialog, sendViaWassenger];
   for (const fn of providers) {
-    const result = await fn(msg).catch((e) => ({
-      ok: false as const,
+    const result: SendResult = await fn(msg).catch((e) => ({
+      ok: false,
       error: e instanceof Error ? e.message : String(e),
     }));
     if (result.skipped) continue;
