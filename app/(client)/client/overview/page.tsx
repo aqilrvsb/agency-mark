@@ -1,20 +1,34 @@
-import { createClient } from "@/lib/supabase/server";
 import { requireClient } from "@/lib/auth/guards";
 import { Card } from "@/components/ui/card";
-import { Wallet, TrendingUp, Target, BarChart3 } from "lucide-react";
+import { parseDateRange } from "@/lib/client-data/aggregate";
+import { loadOverviewData, withRevenueTotals } from "@/lib/client-data/overview-data";
+import { HeroKPIStrip } from "@/components/client/hero-kpi-strip";
+import { GoalPacingBar } from "@/components/client/goal-pacing-bar";
+import { AINarrativeCard } from "@/components/client/ai-narrative-card";
+import { DualAxisChart } from "@/components/client/dual-axis-chart";
+import { ChannelBreakdown } from "@/components/client/channel-breakdown";
+import { BestCampaignCallout } from "@/components/client/best-campaign-callout";
+import { TopCampaignsTable } from "@/components/client/top-campaigns-table";
+import { DateRangePicker } from "@/components/client/date-range-picker";
 
-export default async function ClientOverviewPage() {
+export const dynamic = "force-dynamic";
+
+const fmtMyr = (n: number) =>
+  `RM ${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const fmtInt = (n: number) => n.toLocaleString();
+const fmtPct = (n: number) => `${n.toFixed(2)}%`;
+
+export default async function ClientOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ start?: string; end?: string }>;
+}) {
+  const params = await searchParams;
+  const { start, end } = parseDateRange(params);
   const user = await requireClient();
-  const supabase = await createClient();
+  const raw = await loadOverviewData({ userId: user.id, start, end });
 
-  // Find brand assigned to this client user
-  const { data: brand } = await supabase
-    .from("brands")
-    .select("*")
-    .eq("assigned_client_user_id", user.id)
-    .maybeSingle();
-
-  if (!brand) {
+  if (!raw) {
     return (
       <div className="p-8 max-w-3xl mx-auto">
         <Card className="text-center py-12">
@@ -27,111 +41,122 @@ export default async function ClientOverviewPage() {
     );
   }
 
-  const last30 = new Date();
-  last30.setDate(last30.getDate() - 30);
-  const startIso = last30.toISOString().slice(0, 10);
+  const data = withRevenueTotals(raw);
 
-  const [{ data: adData }, { data: budget }] = await Promise.all([
-    supabase.from("ad_data").select("date_start, platform, data").eq("brand_id", brand.id).gte("date_start", startIso),
-    supabase.from("client_budgets").select("*").eq("brand_id", brand.id).maybeSingle(),
-  ]);
+  // Compute days elapsed in current period (for goal pacing)
+  const today = new Date();
+  const startDate = new Date(data.range.start);
+  const daysElapsed = Math.max(
+    1,
+    Math.min(
+      data.range.days,
+      Math.round((today.getTime() - startDate.getTime()) / 86_400_000) + 1
+    )
+  );
 
-  let spend30 = 0, conversions30 = 0, revenue30 = 0, impressions30 = 0;
-  for (const r of adData ?? []) {
-    const d = r.data as Record<string, unknown>;
-    spend30 += Number(d.spend ?? 0);
-    conversions30 += Number(d.conversions ?? d.results ?? 0);
-    revenue30 += Number(d.purchase_value ?? d.action_values_purchase ?? 0);
-    impressions30 += Number(d.impressions ?? 0);
-  }
-  const roas = spend30 > 0 ? (revenue30 / spend30).toFixed(2) : "—";
+  // KPI tiles
+  const kpiTiles = [
+    {
+      label: "Spend",
+      value: fmtMyr(data.current.spend),
+      delta: data.deltas.spend,
+      deltaPositiveIsGood: false,
+      accent: "text-[var(--color-orange)]",
+    },
+    {
+      label: "Revenue",
+      value: fmtMyr(data.current.revenue),
+      delta: data.deltas.revenue,
+      deltaPositiveIsGood: true,
+      accent: "text-emerald-400",
+    },
+    {
+      label: "ROAS",
+      value: data.current.roas > 0 ? `${data.current.roas.toFixed(2)}×` : "—",
+      delta: data.deltas.roas,
+      deltaPositiveIsGood: true,
+      accent: "text-[var(--color-amber)]",
+    },
+    {
+      label: "Conversions",
+      value: fmtInt(data.current.conversions),
+      delta: data.deltas.conversions,
+      deltaPositiveIsGood: true,
+      accent: "text-[var(--color-lime)]",
+    },
+    {
+      label: "CTR",
+      value: fmtPct(data.current.ctr),
+      delta: data.deltas.ctr,
+      deltaPositiveIsGood: true,
+      accent: "text-cyan-400",
+    },
+    {
+      label: "CPA",
+      value: data.current.conversions > 0 ? fmtMyr(data.current.cpa) : "—",
+      delta: data.deltas.cpa,
+      deltaPositiveIsGood: false,
+      accent: "text-rose-300",
+    },
+  ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <header className="mb-8">
-        <h1 className="font-display font-extrabold text-4xl mb-2">{brand.name as string}</h1>
-        <p className="text-[var(--color-text-secondary)]">
-          Performance dashboard · 30 hari terakhir
-        </p>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      <header className="mb-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="font-display font-extrabold text-3xl lg:text-4xl mb-1">{data.brand.name}</h1>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Performance dashboard · {data.range.start} hingga {data.range.end} ({data.range.days} hari)
+            </p>
+          </div>
+          <DateRangePicker />
+        </div>
       </header>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card className="!p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold">Spend</div>
-            <Wallet className="w-4 h-4 text-[var(--color-orange)]" />
-          </div>
-          <div className="font-display font-extrabold text-2xl text-[var(--color-orange)]">
-            RM {spend30.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-          </div>
-        </Card>
-        <Card className="!p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold">Conversions</div>
-            <Target className="w-4 h-4 text-[var(--color-lime)]" />
-          </div>
-          <div className="font-display font-extrabold text-2xl text-[var(--color-lime)]">
-            {conversions30.toLocaleString()}
-          </div>
-        </Card>
-        <Card className="!p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold">ROAS</div>
-            <TrendingUp className="w-4 h-4 text-[var(--color-amber)]" />
-          </div>
-          <div className="font-display font-extrabold text-2xl text-[var(--color-amber)]">
-            {roas === "—" ? roas : `${roas}x`}
-          </div>
-        </Card>
-        <Card className="!p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold">Impressions</div>
-            <BarChart3 className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="font-display font-extrabold text-2xl text-emerald-400">
-            {impressions30.toLocaleString()}
-          </div>
-        </Card>
-      </div>
+      {/* Goal pacing bar */}
+      <GoalPacingBar
+        spent={data.current.spend}
+        budget={data.budget.totalTopup > 0 ? data.budget.totalTopup : data.current.spend * 1.2}
+        daysElapsed={daysElapsed}
+        daysTotal={data.range.days}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <h2 className="font-display font-bold text-xl mb-4">Budget</h2>
-          <div className="text-center py-6">
-            <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold mb-2">Current balance</div>
-            <div className="font-display font-extrabold text-5xl text-[var(--color-lime)] mb-2">
-              RM {Number(budget?.current_balance_myr ?? 0).toLocaleString()}
-            </div>
-            <div className="text-xs text-[var(--color-text-secondary)]">
-              Total topup: RM {Number(budget?.total_topup_myr ?? 0).toLocaleString()} ·
-              Spent: RM {Number(budget?.total_spent_myr ?? 0).toLocaleString()}
-            </div>
-          </div>
-        </Card>
+      {/* Hero KPI strip */}
+      <HeroKPIStrip tiles={kpiTiles} />
 
-        <Card>
-          <h2 className="font-display font-bold text-xl mb-4">Recent activity</h2>
-          <div className="space-y-1.5">
-            {(adData ?? []).slice(0, 8).map((row, i) => {
-              const d = row.data as Record<string, unknown>;
-              return (
-                <div key={i} className="flex items-center justify-between text-xs py-2 border-b border-[var(--color-border)] last:border-0">
-                  <span className="text-[var(--color-text-muted)]">{row.date_start as string}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${row.platform === "meta" ? "bg-blue-500/15 text-blue-300" : "bg-pink-500/15 text-pink-300"}`}>
-                    {row.platform as string}
-                  </span>
-                  <span className="font-mono">RM {Number(d.spend ?? 0).toFixed(2)}</span>
-                </div>
-              );
-            })}
-            {(adData ?? []).length === 0 && (
-              <div className="text-sm text-[var(--color-text-muted)] py-4 text-center">
-                Tiada data lagi.
-              </div>
-            )}
-          </div>
-        </Card>
+      {/* AI narrative — empty state for now until LLM is wired */}
+      <AINarrativeCard content={null} />
+
+      {/* Dual-axis chart */}
+      <DualAxisChart current={data.daily} prior={data.priorDaily} />
+
+      {/* Channel breakdown */}
+      <ChannelBreakdown platforms={data.byPlatform} />
+
+      {/* Best campaign */}
+      <BestCampaignCallout campaign={data.bestCampaign} />
+
+      {/* Top campaigns table */}
+      <TopCampaignsTable rows={data.topCampaigns} />
+
+      {/* Budget summary */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <BudgetTile label="Current balance" value={fmtMyr(data.budget.currentBalance)} accent="text-[var(--color-lime)]" />
+        <BudgetTile label="Total topup" value={fmtMyr(data.budget.totalTopup)} accent="text-[var(--color-text-primary)]" />
+        <BudgetTile label="Total spent" value={fmtMyr(data.budget.totalSpent)} accent="text-[var(--color-orange)]" />
       </div>
+    </div>
+  );
+}
+
+function BudgetTile({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <div className="rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)] p-4">
+      <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-bold mb-1">
+        {label}
+      </div>
+      <div className={`font-display font-extrabold text-2xl ${accent}`}>{value}</div>
     </div>
   );
 }
