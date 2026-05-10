@@ -2,7 +2,14 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export type UserRole = "platform_admin" | "bod" | "leader" | "marketer" | "client";
+/**
+ * Role enum after the Fighter pivot:
+ *  - platform_admin: us (the AdSolution operators)
+ *  - marketer: every regular user. Each marketer owns their own
+ *    company + brand row (auto-provisioned at signup) and connects
+ *    their own Meta/TikTok/Google ad accounts directly.
+ */
+export type UserRole = "platform_admin" | "marketer";
 
 export interface UserProfile {
   id: string;
@@ -16,13 +23,13 @@ export interface UserProfile {
 
 /**
  * Get current authenticated user + profile.
- * React cache() dedupes calls within a single request — if a page
- * calls requireAgencyStaff() and a child component also needs the
- * user, only one Supabase round-trip is made.
+ * React cache() dedupes calls within a single request.
  */
 export const getCurrentUser = cache(async (): Promise<UserProfile | null> => {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return null;
 
   const { data: profile } = await supabase
@@ -43,29 +50,50 @@ export async function requireRole(allowed: UserRole[]): Promise<UserProfile> {
   if (!user.is_active) redirect("/login?error=account_deactivated");
   if (!allowed.includes(user.role)) {
     if (user.role === "platform_admin") redirect("/platform");
-    if (user.role === "client") redirect("/client/overview");
-    redirect("/dashboard");
+    redirect("/marketer/overview");
   }
   return user;
 }
 
 export const requirePlatformAdmin = () => requireRole(["platform_admin"]);
-export const requireClient = () => requireRole(["platform_admin", "client"]);
 
-export interface AgencyUserProfile extends UserProfile {
+export interface MarketerUserProfile extends UserProfile {
   company_id: string;
 }
 
-async function requireAgencyWithCompany(allowed: UserRole[]): Promise<AgencyUserProfile> {
-  const user = await requireRole(allowed);
+/**
+ * Require a marketer (the Fighter persona). Platform admins can also
+ * access marketer routes for support / debugging purposes.
+ */
+export async function requireMarketer(): Promise<MarketerUserProfile> {
+  const user = await requireRole(["platform_admin", "marketer"]);
   if (!user.company_id) {
     if (user.role === "platform_admin") redirect("/platform");
-    redirect("/login?error=no_company");
+    redirect("/login?error=no_workspace");
   }
-  return user as AgencyUserProfile;
+  return user as MarketerUserProfile;
 }
 
-export const requireAgencyStaff = () =>
-  requireAgencyWithCompany(["platform_admin", "bod", "leader", "marketer"]);
-export const requireAgencyLeadership = () =>
-  requireAgencyWithCompany(["platform_admin", "bod", "leader"]);
+// ─── Legacy aliases ────────────────────────────────────────────────
+// Kept so existing /(client)/* routes still compile and serve the
+// brand-scoped UX (which IS the marketer dashboard now).
+export const requireClient = requireMarketer;
+
+/**
+ * The agency-surface routes (under /(agency)/*) are retired post-Fighter
+ * pivot. We don't delete the files in this commit (lower-risk), but we
+ * actively redirect non-admin visitors to /client/overview so a curious
+ * marketer hitting /dashboard or /clients lands on their actual data.
+ *
+ * Platform admins still pass through for support / debugging.
+ */
+export async function requireAgencyStaff(): Promise<MarketerUserProfile> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  if (!user.is_active) redirect("/login?error=account_deactivated");
+  if (user.role !== "platform_admin") redirect("/client/overview");
+  if (!user.company_id) redirect("/platform");
+  return user as MarketerUserProfile;
+}
+export const requireAgencyLeadership = requireAgencyStaff;
+export type AgencyUserProfile = MarketerUserProfile;

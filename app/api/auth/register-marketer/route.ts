@@ -1,0 +1,121 @@
+import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { seedDefaultTemplates } from "@/lib/templates/seed-defaults";
+
+interface Body {
+  fullName: string;
+  email: string;
+  password: string;
+  whatsapp?: string;
+}
+
+/**
+ * Single-step Marketer ("Fighter") registration.
+ *
+ * Creates: auth user → companies row (their personal workspace) →
+ * users row (role='marketer') → brands row (1:1 with the marketer) →
+ * default report templates seeded.
+ *
+ * No agency / role picker — every signup is a marketer.
+ */
+export async function POST(req: Request) {
+  let body: Body;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const { fullName, email, password, whatsapp } = body;
+  if (!fullName || !email || !password) {
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+  if (password.length < 8) {
+    return NextResponse.json({ error: "Password mesti 8 chars minimum" }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+
+  // 1. Create auth user (auto-confirm, no email verification needed)
+  const { data: authData, error: authError } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+  if (authError || !authData.user) {
+    return NextResponse.json({ error: authError?.message ?? "Gagal create user" }, { status: 400 });
+  }
+  const userId = authData.user.id;
+
+  const rollback = async () => {
+    try {
+      await admin.auth.admin.deleteUser(userId);
+    } catch {}
+  };
+
+  // 2. Create the marketer's personal workspace (companies row)
+  const workspaceName = `${fullName}'s Workspace`;
+  const prefix = fullName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 24) + "-" + userId.slice(0, 6);
+
+  const { data: company, error: companyError } = await admin
+    .from("companies")
+    .insert({
+      name: workspaceName,
+      prefix,
+      is_active: true,
+      owner_user_id: userId,
+    })
+    .select()
+    .single();
+  if (companyError || !company) {
+    await rollback();
+    return NextResponse.json({ error: companyError?.message ?? "Gagal create workspace" }, { status: 400 });
+  }
+
+  // 3. Create user profile (role='marketer')
+  const { error: userError } = await admin.from("users").insert({
+    id: userId,
+    company_id: company.id,
+    email,
+    full_name: fullName,
+    role: "marketer",
+    whatsapp_number: whatsapp || null,
+    is_active: true,
+  });
+  if (userError) {
+    await admin.from("companies").delete().eq("id", company.id);
+    await rollback();
+    return NextResponse.json({ error: userError.message }, { status: 400 });
+  }
+
+  // 4. Auto-create the marketer's default brand (1:1 with the user)
+  const { data: brand, error: brandError } = await admin
+    .from("brands")
+    .insert({
+      company_id: company.id,
+      name: fullName,
+      is_active: true,
+      owner_user_id: userId,
+      assigned_client_user_id: userId, // marketer IS their own client for /client/* routes
+    })
+    .select()
+    .single();
+  if (brandError || !brand) {
+    // Non-fatal — proceed but log
+    console.error("[register-marketer] brand creation failed:", brandError?.message);
+  }
+
+  // 5. Seed default report templates
+  await seedDefaultTemplates(admin, userId, company.id, brand?.id ?? null);
+
+  return NextResponse.json({
+    ok: true,
+    company_id: company.id,
+    brand_id: brand?.id ?? null,
+    user_id: userId,
+  });
+}

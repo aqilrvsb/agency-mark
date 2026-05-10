@@ -55,10 +55,10 @@ function LoginPageInner() {
       .eq("id", user.id)
       .maybeSingle();
 
-    const dest =
-      profile?.role === "platform_admin" ? "/platform" :
-      profile?.role === "client" ? "/client/overview" :
-      "/dashboard";
+    // Single-role product post-Fighter pivot: every regular user is a marketer.
+    // Marketers land on /client/overview (the existing brand-scoped UX) which
+    // also surfaces the Templates nav item to access /marketer/templates.
+    const dest = profile?.role === "platform_admin" ? "/platform" : "/client/overview";
     router.replace(dest);
   }
 

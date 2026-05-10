@@ -1,12 +1,12 @@
-import { requireClient } from "@/lib/auth/guards";
+import { requireMarketer } from "@/lib/auth/guards";
 import Link from "next/link";
-import { Sparkles, LayoutDashboard, Wallet, FileText, Bell, Settings, MessageCircle, Plug } from "lucide-react";
+import { Sparkles, LayoutDashboard, Wallet, FileText, Bell, Settings, MessageCircle, Plug, LayoutTemplate } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { PlatformNavSection } from "./platform-nav";
 import { MobileSidebarToggle } from "@/components/client/mobile-sidebar";
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireClient();
+  const user = await requireMarketer();
 
   return (
     <div className="min-h-screen md:flex">
@@ -18,7 +18,7 @@ export default async function ClientLayout({ children }: { children: React.React
             </div>
             <div>
               <div className="font-display font-extrabold text-lg leading-none">AdSolution</div>
-              <div className="text-[10px] uppercase tracking-widest text-[var(--color-orange)] mt-0.5">Client</div>
+              <div className="text-[10px] uppercase tracking-widest text-[var(--color-orange)] mt-0.5">Marketer</div>
             </div>
           </Link>
         </div>
@@ -26,6 +26,7 @@ export default async function ClientLayout({ children }: { children: React.React
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           <ul className="space-y-1">
             <li><NavItem href="/client/overview" icon={LayoutDashboard}>Overview</NavItem></li>
+            <li><NavItem href="/marketer/templates" icon={LayoutTemplate}>Templates</NavItem></li>
             <li><NavItem href="/client/connections" icon={Plug}>Connect Ads</NavItem></li>
           </ul>
 
