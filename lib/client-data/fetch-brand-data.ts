@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { aggregateAdData, summarize, type AdLevel } from "./aggregate";
 
+interface RawRow { platform: string; date_start: string; data: import("@/lib/supabase/types").Json }
+
 interface DailyPoint {
   date: string;
   spend: number;
@@ -73,14 +75,14 @@ export async function loadBrandLevelData(opts: {
 
   let currQ = supabase
     .from("ad_data")
-    .select("platform, date_start, data")
+    .select("platform, platform_ad_account_id, date_start, data")
     .eq("brand_id", brand.id as string)
     .in("platform", opts.platforms)
     .gte("date_start", startIso)
     .lte("date_start", endIso);
   let priorQ = supabase
     .from("ad_data")
-    .select("platform, date_start, data")
+    .select("platform, platform_ad_account_id, date_start, data")
     .eq("brand_id", brand.id as string)
     .in("platform", opts.platforms)
     .gte("date_start", priorStart)
@@ -120,6 +122,39 @@ export async function loadBrandLevelData(opts: {
   const totals = summarize(rows);
   const priorRows = aggregateAdData(priorData ?? [], opts.level);
   const priorTotals = summarize(priorRows);
+
+  // Spend distribution by Meta Ad Account (the chip surfaces this too —
+  // donut visualizes share). Map ad_account_id → display name via the
+  // brand_platform_ad_accounts cache.
+  const accountNameById = new Map(adAccountOptions.map((a) => [a.platformAdAccountId, a.adAccountName ?? a.platformAdAccountId]));
+  const spendByAccountMap = new Map<string, number>();
+  for (const r of (currData ?? []) as Array<RawRow & { platform_ad_account_id?: string | null }>) {
+    const acct = (r.platform_ad_account_id as string | null) ?? "unknown";
+    const d = (r.data as Record<string, unknown>) ?? {};
+    const spend = Number(d.spend ?? d.cost ?? 0);
+    spendByAccountMap.set(acct, (spendByAccountMap.get(acct) ?? 0) + spend);
+  }
+  const spendByAccount = [...spendByAccountMap.entries()]
+    .map(([key, value]) => ({
+      key,
+      label: accountNameById.get(key) ?? key,
+      value,
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  // Daily series (single-metric trend cards in the story row use this too)
+  const buildDailySpend = (rs: typeof currData) => {
+    const m = new Map<string, number>();
+    for (const r of rs ?? []) {
+      const d = (r.data as Record<string, unknown>) ?? {};
+      const date = r.date_start as string;
+      m.set(date, (m.get(date) ?? 0) + Number(d.spend ?? d.cost ?? 0));
+    }
+    return [...m.entries()]
+      .map(([date, value]) => ({ date, value }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  };
+  const dailySpendOnly = buildDailySpend(currData);
 
   // Daily series for chart
   const buildDaily = (rows: typeof currData): DailyPoint[] => {
@@ -172,6 +207,8 @@ export async function loadBrandLevelData(opts: {
     deltas,
     daily,
     priorDaily,
+    dailySpendOnly,
+    spendByAccount,
     annotations: annotationItems,
     range: { start: startIso, end: endIso, days },
     adAccountOptions,

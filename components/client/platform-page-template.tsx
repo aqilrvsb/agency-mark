@@ -5,6 +5,9 @@ import { TopCampaignsTable } from "./top-campaigns-table";
 import { DateRangePicker } from "./date-range-picker";
 import { AdAccountFilter, type AdAccountOption } from "./ad-account-filter";
 import { ChartAnnotationsManager, type AnnotationItem } from "./chart-annotations-form";
+import { SingleMetricTrend } from "./single-metric-trend";
+import { TopBreakdownBars } from "./top-breakdown-bars";
+import { DistributionDonut } from "./distribution-donut";
 
 const fmtMyr = (n: number) =>
   `RM ${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -43,6 +46,9 @@ export interface PlatformPageProps {
   annotations?: AnnotationItem[];
   brandId?: string;
   adAccountOptions?: AdAccountOption[];
+  // Story-row inputs (3-up widget cluster above the dual-axis chart)
+  dailySpendOnly?: { date: string; value: number }[];
+  spendByAccount?: { key: string; label: string; value: number }[];
 }
 
 function levelLabel(level: "campaign" | "adset" | "ad", platformLabel: string): { plural: string; singular: string } {
@@ -67,6 +73,8 @@ export function PlatformPageTemplate({
   annotations = [],
   brandId,
   adAccountOptions = [],
+  dailySpendOnly = [],
+  spendByAccount = [],
 }: PlatformPageProps) {
   const labels = levelLabel(level, platformLabel);
 
@@ -147,6 +155,24 @@ export function PlatformPageTemplate({
       </header>
 
       <HeroKPIStrip tiles={tiles} />
+
+      {/* Story row: at-a-glance trend + top-N breakdown + distribution donut */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-6">
+        <SingleMetricTrend
+          title={`${labels.plural === "Ad Sets" || labels.plural === "Ad Groups" ? "Ad set" : labels.singular.toLowerCase()} spend`}
+          data={dailySpendOnly}
+          prefix="RM "
+        />
+        <TopBreakdownBars
+          title={`Top ${labels.plural.toLowerCase()} by spend`}
+          items={rows.slice(0, 5).map((r) => ({ key: r.key, name: r.name, value: r.spend }))}
+        />
+        <DistributionDonut
+          title="Spend by ad account"
+          slices={spendByAccount}
+          centerLabel="Total"
+        />
+      </div>
 
       <DualAxisChart current={daily} prior={priorDaily} annotations={annotations} />
 

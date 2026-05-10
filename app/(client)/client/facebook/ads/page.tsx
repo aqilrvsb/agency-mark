@@ -38,6 +38,8 @@ export default async function FacebookAdsPage({
       annotations={data.annotations}
       brandId={data.brand?.id}
       adAccountOptions={data.adAccountOptions}
+      dailySpendOnly={data.dailySpendOnly}
+      spendByAccount={data.spendByAccount}
     />
   );
 }

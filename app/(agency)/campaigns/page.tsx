@@ -1,83 +1,220 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAgencyStaff } from "@/lib/auth/guards";
-import { Card } from "@/components/ui/card";
-import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from "@/components/ui/table";
+import { aggregateAdData, parseDateRange, summarize } from "@/lib/client-data/aggregate";
+import type { Json } from "@/lib/supabase/types";
+import { HeroKPIStrip } from "@/components/client/hero-kpi-strip";
+import { DualAxisChart } from "@/components/client/dual-axis-chart";
+import { DateRangePicker } from "@/components/client/date-range-picker";
+import { TopCampaignsTable } from "@/components/client/top-campaigns-table";
+import { SingleMetricTrend } from "@/components/client/single-metric-trend";
+import { TopBreakdownBars } from "@/components/client/top-breakdown-bars";
+import { DistributionDonut } from "@/components/client/distribution-donut";
 
-export default async function CampaignsPage() {
+export const dynamic = "force-dynamic";
+
+const fmtMyr = (n: number) =>
+  `RM ${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const fmtInt = (n: number) => n.toLocaleString();
+const fmtPct = (n: number) => `${n.toFixed(2)}%`;
+
+function deltaPct(curr: number, prev: number): number {
+  if (prev === 0) return curr > 0 ? 100 : 0;
+  return ((curr - prev) / prev) * 100;
+}
+
+function isoMinusDays(iso: string, days: number) {
+  const d = new Date(iso);
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+const PLATFORM_GROUPS: Record<string, { label: string; values: string[] }> = {
+  all: { label: "All platforms", values: [] },
+  facebook: { label: "Facebook Ads", values: ["meta_ads", "meta", "meta_insights"] },
+  google: { label: "Google Ads", values: ["google_ads"] },
+  tiktok: { label: "TikTok Ads", values: ["tiktok_ads", "tiktok"] },
+};
+
+export default async function CampaignsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ start?: string; end?: string; platform?: string }>;
+}) {
+  const sp = await searchParams;
+  const { start, end } = parseDateRange(sp);
+  const platform = (sp.platform ?? "all") as keyof typeof PLATFORM_GROUPS;
+  const group = PLATFORM_GROUPS[platform] ?? PLATFORM_GROUPS.all;
   const user = await requireAgencyStaff();
   const supabase = await createClient();
-  const last30 = new Date();
-  last30.setDate(last30.getDate() - 30);
 
-  const { data: rows } = await supabase
+  const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
+  const priorEnd = isoMinusDays(start, 1);
+  const priorStart = isoMinusDays(priorEnd, days - 1);
+
+  // Build queries scoped to company; optionally narrow by platform group
+  let currQ = supabase
     .from("ad_data")
-    .select("date_start, platform, brand_id, data, brands:brands(name)")
-    .eq("company_id", user.company_id)
-    .gte("date_start", last30.toISOString().slice(0, 10))
-    .order("date_start", { ascending: false })
-    .limit(200);
+    .select("platform, brand_id, date_start, data")
+    .eq("company_id", user.company_id ?? "")
+    .gte("date_start", start)
+    .lte("date_start", end);
+  let priorQ = supabase
+    .from("ad_data")
+    .select("platform, brand_id, date_start, data")
+    .eq("company_id", user.company_id ?? "")
+    .gte("date_start", priorStart)
+    .lte("date_start", priorEnd);
+  if (group.values.length > 0) {
+    currQ = currQ.in("platform", group.values);
+    priorQ = priorQ.in("platform", group.values);
+  }
+
+  const [{ data: currRaw }, { data: priorRaw }, { data: brandList }] = await Promise.all([
+    currQ,
+    priorQ,
+    supabase
+      .from("brands")
+      .select("id, name")
+      .eq("company_id", user.company_id ?? "")
+      .eq("is_active", true),
+  ]);
+
+  const brandNameById = new Map((brandList ?? []).map((b) => [b.id as string, b.name as string]));
+
+  // Cast for aggregate helper compatibility (it expects { platform, date_start, data })
+  const currForAgg = (currRaw ?? []).map((r) => ({
+    platform: r.platform as string,
+    date_start: r.date_start as string,
+    data: r.data as Json,
+  }));
+  const priorForAgg = (priorRaw ?? []).map((r) => ({
+    platform: r.platform as string,
+    date_start: r.date_start as string,
+    data: r.data as Json,
+  }));
+
+  const totals = summarize(aggregateAdData(currForAgg, "campaign"));
+  const priorTotals = summarize(aggregateAdData(priorForAgg, "campaign"));
+  const campaignRows = aggregateAdData(currForAgg, "campaign");
+
+  // Build daily series
+  const buildDaily = (rs: typeof currRaw) => {
+    const m = new Map<string, { spend: number; revenue: number }>();
+    for (const r of rs ?? []) {
+      const d = (r.data as Record<string, unknown>) ?? {};
+      const date = r.date_start as string;
+      const ex = m.get(date) ?? { spend: 0, revenue: 0 };
+      ex.spend += Number(d.spend ?? d.cost ?? 0);
+      ex.revenue += Number(d.purchase_value ?? d.conversion_value ?? d.revenue ?? 0);
+      m.set(date, ex);
+    }
+    return [...m.entries()].map(([date, v]) => ({ date, ...v })).sort((a, b) => a.date.localeCompare(b.date));
+  };
+  const daily = buildDaily(currRaw);
+  const priorDaily = buildDaily(priorRaw);
+  const dailySpendOnly = daily.map((d) => ({ date: d.date, value: d.spend }));
+
+  // Top brands by spend (story row's middle column)
+  const spendByBrandMap = new Map<string, number>();
+  for (const r of currRaw ?? []) {
+    const id = r.brand_id as string;
+    const d = (r.data as Record<string, unknown>) ?? {};
+    spendByBrandMap.set(id, (spendByBrandMap.get(id) ?? 0) + Number(d.spend ?? d.cost ?? 0));
+  }
+  const topBrandsBySpend = [...spendByBrandMap.entries()]
+    .map(([id, value]) => ({
+      key: id,
+      name: brandNameById.get(id) ?? "Unknown brand",
+      value,
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  // Spend distribution by platform (donut)
+  const spendByPlatformMap = new Map<string, number>();
+  for (const r of currRaw ?? []) {
+    const p = r.platform as string;
+    const label =
+      p === "meta_ads" || p === "meta" || p === "meta_insights" ? "Facebook"
+      : p === "google_ads" ? "Google"
+      : p === "tiktok_ads" || p === "tiktok" ? "TikTok"
+      : p;
+    const d = (r.data as Record<string, unknown>) ?? {};
+    spendByPlatformMap.set(label, (spendByPlatformMap.get(label) ?? 0) + Number(d.spend ?? d.cost ?? 0));
+  }
+  const spendByPlatform = [...spendByPlatformMap.entries()].map(([key, value]) => ({
+    key,
+    label: key,
+    value,
+  }));
+
+  const tiles = [
+    { label: "Spend", value: fmtMyr(totals.spend), delta: deltaPct(totals.spend, priorTotals.spend), deltaPositiveIsGood: false, accent: "text-[var(--color-orange)]" },
+    { label: "Revenue", value: fmtMyr(totals.revenue), delta: deltaPct(totals.revenue, priorTotals.revenue), deltaPositiveIsGood: true, accent: "text-emerald-400" },
+    { label: "ROAS", value: totals.roas > 0 ? `${totals.roas.toFixed(2)}×` : "—", delta: deltaPct(totals.roas, priorTotals.roas), deltaPositiveIsGood: true, accent: "text-[var(--color-amber)]" },
+    { label: "Conversions", value: fmtInt(totals.conversions), delta: deltaPct(totals.conversions, priorTotals.conversions), deltaPositiveIsGood: true, accent: "text-[var(--color-lime)]" },
+    { label: "CTR", value: fmtPct(totals.ctr), delta: deltaPct(totals.ctr, priorTotals.ctr), deltaPositiveIsGood: true, accent: "text-cyan-400" },
+    { label: "CPA", value: totals.conversions > 0 ? fmtMyr(totals.cpa) : "—", delta: deltaPct(totals.cpa, priorTotals.cpa), deltaPositiveIsGood: false, accent: "text-rose-300" },
+  ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <header className="mb-8">
-        <h1 className="font-display font-extrabold text-4xl mb-2">Campaigns</h1>
-        <p className="text-[var(--color-text-secondary)]">Last 30 days of ad performance across all clients.</p>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      <header className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display font-extrabold text-3xl sm:text-4xl mb-1">Campaigns</h1>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            Across all clients · {start} → {end} ({days} days)
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <PlatformTabs current={platform as string} />
+          <DateRangePicker />
+        </div>
       </header>
 
-      <Card className="!p-0 !border-0 !bg-transparent">
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeader>Date</TableHeader>
-              <TableHeader>Client</TableHeader>
-              <TableHeader>Platform</TableHeader>
-              <TableHeader>Campaign</TableHeader>
-              <TableHeader>Spend</TableHeader>
-              <TableHeader>Impressions</TableHeader>
-              <TableHeader>CTR</TableHeader>
-              <TableHeader>ROAS</TableHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(rows ?? []).map((r, i) => {
-              const d = r.data as Record<string, unknown>;
-              const spend = Number(d.spend ?? 0);
-              const impressions = Number(d.impressions ?? 0);
-              const clicks = Number(d.clicks ?? 0);
-              const revenue = Number(d.purchase_value ?? d.action_values_purchase ?? 0);
-              const ctr = impressions > 0 ? ((clicks / impressions) * 100).toFixed(2) : "0";
-              const roas = spend > 0 ? (revenue / spend).toFixed(2) : "—";
-              const brands = r.brands as unknown as { name: string }[] | { name: string } | null;
-              const brandName = Array.isArray(brands) ? brands[0]?.name ?? "—" : brands?.name ?? "—";
-              return (
-                <TableRow key={i}>
-                  <TableCell className="text-xs">{r.date_start as string}</TableCell>
-                  <TableCell className="font-medium">{brandName}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.platform === "meta" ? "bg-blue-500/15 text-blue-300" : "bg-pink-500/15 text-pink-300"}`}>
-                      {r.platform === "meta" ? "FB" : "TT"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-xs">{(d.campaign_name as string) || "—"}</TableCell>
-                  <TableCell className="font-mono">RM {spend.toFixed(2)}</TableCell>
-                  <TableCell className="font-mono">{impressions.toLocaleString()}</TableCell>
-                  <TableCell className="font-mono">{ctr}%</TableCell>
-                  <TableCell className={`font-mono font-bold ${Number(roas) >= 3 ? "text-emerald-400" : Number(roas) >= 1 ? "text-amber-400" : "text-red-400"}`}>
-                    {roas === "—" ? roas : `${roas}x`}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {(rows ?? []).length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-12 text-[var(--color-text-muted)]">
-                  No campaign data yet. Wait for next BigQuery sync.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Card>
+      <HeroKPIStrip tiles={tiles} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-6">
+        <SingleMetricTrend title="Daily spend" data={dailySpendOnly} prefix="RM " />
+        <TopBreakdownBars title="Top clients by spend" items={topBrandsBySpend} />
+        <DistributionDonut title="Spend by platform" slices={spendByPlatform} centerLabel="Total" />
+      </div>
+
+      <DualAxisChart current={daily} prior={priorDaily} />
+
+      <TopCampaignsTable rows={campaignRows} />
+    </div>
+  );
+}
+
+function PlatformTabs({ current }: { current: string }) {
+  const tabs = [
+    { key: "all", label: "All" },
+    { key: "facebook", label: "Facebook" },
+    { key: "google", label: "Google" },
+    { key: "tiktok", label: "TikTok" },
+  ];
+  return (
+    <div className="flex items-center gap-1 rounded-xl bg-[var(--color-bg-soft)] border border-[var(--color-border)] p-1">
+      {tabs.map((t) => {
+        const isActive = current === t.key;
+        // Build a self-link that preserves start/end query params via no-JS approach:
+        // an `a` tag with the platform set; date params are preserved by the browser
+        // when clicked (because Next prefetches the route, server reads searchParams).
+        const href = `?platform=${t.key}`;
+        return (
+          <a
+            key={t.key}
+            href={href}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+              isActive
+                ? "bg-[var(--color-orange)] text-black"
+                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+            }`}
+          >
+            {t.label}
+          </a>
+        );
+      })}
     </div>
   );
 }
