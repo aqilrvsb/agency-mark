@@ -53,6 +53,7 @@ export async function loadBrandLevelData(opts: {
       priorDaily: [] as DailyPoint[],
       dailySpendOnly: [] as { date: string; value: number }[],
       dailyClicks: [] as { date: string; value: number }[],
+      dailyImpressions: [] as { date: string; value: number }[],
       spendByAccount: [] as { key: string; label: string; value: number }[],
       clicksByAccount: [] as { key: string; label: string; value: number }[],
       annotations: [] as { id: string; anchor_date: string; body: string; created_at: string; author_name: string | null }[],
@@ -180,8 +181,20 @@ export async function loadBrandLevelData(opts: {
       .map(([date, value]) => ({ date, value }))
       .sort((a, b) => a.date.localeCompare(b.date));
   };
+  const buildDailyImpressions = (rs: typeof currData) => {
+    const m = new Map<string, number>();
+    for (const r of rs ?? []) {
+      const d = (r.data as Record<string, unknown>) ?? {};
+      const date = r.date_start as string;
+      m.set(date, (m.get(date) ?? 0) + Number(d.impressions ?? 0));
+    }
+    return [...m.entries()]
+      .map(([date, value]) => ({ date, value }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  };
   const dailySpendOnly = buildDailySpend(currData);
   const dailyClicks = buildDailyClicks(currData);
+  const dailyImpressions = buildDailyImpressions(currData);
 
   // Daily series for chart
   const buildDaily = (rows: typeof currData): DailyPoint[] => {
@@ -236,6 +249,7 @@ export async function loadBrandLevelData(opts: {
     priorDaily,
     dailySpendOnly,
     dailyClicks,
+    dailyImpressions,
     spendByAccount,
     clicksByAccount,
     annotations: annotationItems,
