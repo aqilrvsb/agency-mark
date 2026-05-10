@@ -170,9 +170,13 @@ export function summarize(rows: AggregateRow[]) {
 
 /**
  * Parse YYYY-MM-DD date range from URL search params with sensible defaults.
- * Defaults to last 30 days.
+ *
+ * Default = last 90 days. This matches Zernio's discovery-backfill window
+ * (the platform pulls 90 days of historical ads on initial connection),
+ * so a freshly-connected brand sees data immediately. Users can narrow
+ * via the "Last 7 / 30 / 90 days" date-range picker.
  */
-export function parseDateRange(search: { start?: string; end?: string }, defaultDays = 30) {
+export function parseDateRange(search: { start?: string; end?: string }, defaultDays = 90) {
   const today = new Date();
   const todayIso = today.toISOString().slice(0, 10);
   const defaultStart = new Date(today);
