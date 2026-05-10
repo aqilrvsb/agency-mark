@@ -15,6 +15,7 @@ export interface BrandTile {
   conversionsDelta: number;
   platforms: string[]; // unique normalized platforms connected
   unreadAlerts: number;
+  spark: number[]; // last N daily spend values (oldest → newest)
 }
 
 export interface DashboardData {
@@ -114,6 +115,26 @@ export async function loadDashboardData(opts: { companyId: string; days?: number
   const currByBrand = aggBrand((currRes.data ?? []) as unknown as AdRow[]);
   const priorByBrand = aggBrand((priorRes.data ?? []) as unknown as AdRow[]);
 
+  // Per-brand daily spend for sparklines
+  const sparkByBrand = new Map<string, Map<string, number>>();
+  for (const r of (currRes.data ?? []) as unknown as AdRow[]) {
+    const id = r.brand_id;
+    const date = r.date_start;
+    const d = r.data ?? {};
+    const spend = Number(d.spend ?? d.cost ?? 0);
+    let dayMap = sparkByBrand.get(id);
+    if (!dayMap) {
+      dayMap = new Map();
+      sparkByBrand.set(id, dayMap);
+    }
+    dayMap.set(date, (dayMap.get(date) ?? 0) + spend);
+  }
+  // Build a complete day list for the window (so missing days show as 0 in the spark)
+  const dayList: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    dayList.push(isoMinusDays(today, i));
+  }
+
   // platforms by brand
   const platformsByBrand = new Map<string, Set<string>>();
   for (const a of accountsRes.data ?? []) {
@@ -150,6 +171,9 @@ export async function loadDashboardData(opts: { companyId: string; days?: number
       statusReason = "Performing well";
     }
 
+    const dayMap = sparkByBrand.get(id) ?? new Map<string, number>();
+    const spark = dayList.map((d) => dayMap.get(d) ?? 0);
+
     return {
       id,
       name: b.name as string,
@@ -162,7 +186,8 @@ export async function loadDashboardData(opts: { companyId: string; days?: number
       conversions: curr.conversions,
       conversionsDelta: deltaPct(curr.conversions, prior.conversions),
       platforms: [...(platformsByBrand.get(id) ?? [])],
-      unreadAlerts: 0, // alerts table doesn't link to brands directly yet
+      unreadAlerts: 0,
+      spark,
     };
   });
 

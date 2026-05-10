@@ -11,6 +11,7 @@ import { BestCampaignCallout } from "@/components/client/best-campaign-callout";
 import { TopCampaignsTable } from "@/components/client/top-campaigns-table";
 import { DateRangePicker } from "@/components/client/date-range-picker";
 import { ChartAnnotationsManager } from "@/components/client/chart-annotations-form";
+import { GoalsProgressGrid } from "@/components/client/goals-progress-grid";
 
 export const dynamic = "force-dynamic";
 
@@ -115,16 +116,21 @@ export default async function ClientOverviewPage({
         </div>
       </header>
 
-      {/* Goal pacing bar */}
-      <GoalPacingBar
-        spent={data.current.spend}
-        budget={data.budget.totalTopup > 0 ? data.budget.totalTopup : data.current.spend * 1.2}
-        daysElapsed={daysElapsed}
-        daysTotal={data.range.days}
-      />
+      {/* Goal pacing bar (budget-based, only if there's a topup) */}
+      {data.budget.totalTopup > 0 && (
+        <GoalPacingBar
+          spent={data.current.spend}
+          budget={data.budget.totalTopup}
+          daysElapsed={daysElapsed}
+          daysTotal={data.range.days}
+        />
+      )}
 
       {/* Hero KPI strip */}
       <HeroKPIStrip tiles={kpiTiles} />
+
+      {/* KPI goals (set by agency) */}
+      <GoalsProgressGrid goals={data.goals} />
 
       {/* AI narrative — empty state for now until LLM is wired */}
       <AINarrativeCard content={null} />

@@ -32,9 +32,19 @@ export interface AnnotationItem {
   author_name: string | null;
 }
 
+export interface KpiGoal {
+  id: string;
+  metric: string; // spend, revenue, conversions, roas, cpa, ctr
+  target_value: number;
+  direction: "higher_is_better" | "lower_is_better";
+  current_value: number;
+  pct_of_target: number;
+}
+
 export interface OverviewData {
   brand: { id: string; name: string };
   annotations: AnnotationItem[];
+  goals: KpiGoal[];
   range: { start: string; end: string; days: number };
   current: {
     spend: number;
@@ -109,6 +119,7 @@ export async function loadOverviewData(opts: {
     { data: budget },
     { data: connections },
     { data: annotations },
+    { data: kpiTargets },
   ] = await Promise.all([
     supabase
       .from("ad_data")
@@ -135,6 +146,11 @@ export async function loadOverviewData(opts: {
       .gte("anchor_date", start)
       .lte("anchor_date", end)
       .order("anchor_date", { ascending: true }),
+    supabase
+      .from("kpi_targets")
+      .select("id, metric, target_value, direction")
+      .eq("brand_id", brandId)
+      .eq("is_active", true),
   ]);
 
   const currTotals = summarize(aggregateAdData(currRows ?? [], "campaign"));
@@ -200,9 +216,43 @@ export async function loadOverviewData(opts: {
     };
   });
 
+  // Compute goal progress
+  const metricCurrent: Record<string, number> = {
+    spend: currTotals.spend,
+    revenue: 0, // filled below from daily
+    conversions: currTotals.conversions,
+    roas: currTotals.roas,
+    cpa: currTotals.cpa,
+    ctr: currTotals.ctr,
+  };
+  const goals: KpiGoal[] = (kpiTargets ?? []).map((t) => {
+    const metric = t.metric as string;
+    const target = Number(t.target_value);
+    const direction = ((t.direction as string) ?? "higher_is_better") as "higher_is_better" | "lower_is_better";
+    const current = metricCurrent[metric] ?? 0;
+    // For "higher is better" → current/target. For "lower is better" → invert: target/current.
+    const pct =
+      target === 0
+        ? 0
+        : direction === "higher_is_better"
+          ? (current / target) * 100
+          : current === 0
+            ? 0
+            : (target / current) * 100;
+    return {
+      id: t.id as string,
+      metric,
+      target_value: target,
+      direction,
+      current_value: current,
+      pct_of_target: pct,
+    };
+  });
+
   return {
     brand: { id: brandId, name: brand.name as string },
     annotations: annotationItems,
+    goals,
     range: { start, end, days },
     current: {
       spend: currTotals.spend,
@@ -241,9 +291,23 @@ export async function loadOverviewData(opts: {
 export function withRevenueTotals(o: OverviewData): OverviewData {
   const currRevenue = o.daily.reduce((s, d) => s + d.revenue, 0);
   const priorRevenue = o.priorDaily.reduce((s, d) => s + d.revenue, 0);
+  // Backfill revenue into any "revenue" goal
+  const goals = o.goals.map((g) => {
+    if (g.metric !== "revenue") return g;
+    const pct =
+      g.target_value === 0
+        ? 0
+        : g.direction === "higher_is_better"
+          ? (currRevenue / g.target_value) * 100
+          : currRevenue === 0
+            ? 0
+            : (g.target_value / currRevenue) * 100;
+    return { ...g, current_value: currRevenue, pct_of_target: pct };
+  });
   return {
     ...o,
     current: { ...o.current, revenue: currRevenue },
     deltas: { ...o.deltas, revenue: deltaPct(currRevenue, priorRevenue) },
+    goals,
   };
 }

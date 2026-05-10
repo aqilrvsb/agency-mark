@@ -44,7 +44,7 @@ export function ClientTile({ tile }: { tile: BrandTile }) {
         {status.label} · {tile.statusReason}
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-3">
+      <div className="grid grid-cols-3 gap-2 mb-2">
         <Stat label="Spend 7d" value={fmtMyr(tile.spend)} delta={tile.spendDelta} positiveIsGood={false} />
         <Stat
           label="ROAS"
@@ -59,6 +59,8 @@ export function ClientTile({ tile }: { tile: BrandTile }) {
           positiveIsGood={true}
         />
       </div>
+
+      <Sparkline data={tile.spark} status={tile.status} />
 
       <div className="flex items-center justify-between">
         <div className="flex gap-1">
@@ -81,6 +83,28 @@ export function ClientTile({ tile }: { tile: BrandTile }) {
         </span>
       </div>
     </Link>
+  );
+}
+
+function Sparkline({ data, status }: { data: number[]; status: BrandTile["status"] }) {
+  if (data.length === 0 || data.every((d) => d === 0)) {
+    return <div className="h-8 mb-2" />;
+  }
+  const max = Math.max(...data, 1);
+  const w = 200;
+  const h = 24;
+  const step = data.length > 1 ? w / (data.length - 1) : 0;
+  const points = data
+    .map((v, i) => `${(i * step).toFixed(1)},${(h - (v / max) * h).toFixed(1)}`)
+    .join(" ");
+  const stroke =
+    status === "alert" ? "rgb(248 113 113)"
+    : status === "warn" ? "rgb(251 191 36)"
+    : "rgb(52 211 153)";
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-6 mb-2 opacity-80" preserveAspectRatio="none">
+      <polyline points={points} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
   );
 }
 
