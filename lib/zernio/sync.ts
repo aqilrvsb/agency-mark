@@ -118,24 +118,32 @@ export async function syncBrandWindow(opts: {
           for (const ad of r.ads) {
             const adId = ad._id ?? ad.id;
             if (!adId) continue;
-            try {
-              const analytics = await zernio.getAdAnalytics(adId, {
-                fromDate: opts.fromDate,
-                toDate: opts.toDate,
-              });
-              for (const day of analytics.analytics.daily ?? []) {
-                insertsThisAccount.push(toRow({
-                  companyId,
-                  brandId: opts.brandId,
-                  internalPlatform,
-                  adAccount: adAcc,
-                  ad,
-                  day,
-                }));
-              }
-            } catch (e) {
-              errors.push(`getAdAnalytics(${adId}): ${e instanceof Error ? e.message : String(e)}`);
-            }
+            // Use the summary metrics from /v1/ads directly. Per-ad daily
+            // breakdown via /v1/ads/{adId}/analytics would give richer data
+            // for the chart, but Zernio's 60-req/min rate limit makes that
+            // non-viable for accounts with many ads inside a Vercel
+            // function timeout. Write one summary row per ad dated to the
+            // window's toDate; KPIs and Top Campaigns aggregate correctly.
+            const m = (ad as { metrics?: ZernioAdMetrics }).metrics ?? {};
+            const lastSyncedAt = (m as { lastSyncedAt?: string }).lastSyncedAt;
+            // Skip ads Zernio hasn't synced yet (lastSyncedAt null = no metrics)
+            // unless they have any non-zero metric (some ads sync without
+            // setting lastSyncedAt for inherited campaign metrics).
+            const hasAnyMetric =
+              num(m.spend) > 0 ||
+              num(m.impressions) > 0 ||
+              num(m.clicks) > 0 ||
+              num(m.conversions) > 0;
+            if (!lastSyncedAt && !hasAnyMetric) continue;
+
+            insertsThisAccount.push(toRow({
+              companyId,
+              brandId: opts.brandId,
+              internalPlatform,
+              adAccount: adAcc,
+              ad,
+              day: { ...m, date: opts.toDate },
+            }));
           }
           if (r.pagination.page >= r.pagination.pages) break;
         }
