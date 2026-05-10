@@ -183,7 +183,7 @@ export default async function RunReportPage({
                   renderedRows.map((row, i) => (
                     <tr key={i} className="transition-colors hover:bg-white/[0.02]">
                       {columns.map((c) => {
-                        const v = row[c.path];
+                        const v: unknown = row[c.path];
                         const isThumb = c.format === "thumbnail";
                         const isText = c.format === "text";
                         return (

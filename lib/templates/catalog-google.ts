@@ -23,14 +23,29 @@ export const googleCatalog: PlatformCatalog = {
     { id: "custom", label: "Custom" },
   ],
   categories: [
-    { tab: "key_metrics", name: "Performance", groups: ["Conversions", "Clicks & Impressions"] },
+    {
+      tab: "key_metrics",
+      name: "Performance",
+      groups: ["Conversions", "Clicks & Impressions", "Engagement", "Phone calls"],
+    },
     { tab: "key_metrics", name: "Cost", groups: ["Cost"] },
-    { tab: "tracking", name: "Conversions", groups: ["All conversions", "Attribution"] },
-    { tab: "ad_settings", name: "Identity", groups: ["Names & IDs", "Status"] },
+    {
+      tab: "tracking",
+      name: "Conversions",
+      groups: ["All conversions", "Attribution", "Per-action"],
+    },
+    {
+      tab: "ad_settings",
+      name: "Identity",
+      groups: ["Names & IDs", "Status", "Schedule & status"],
+    },
     { tab: "advanced", name: "Search Impression Share", groups: ["Share", "Position", "Lost"] },
-    { tab: "advanced", name: "Quality", groups: ["Quality score (keyword)"] },
+    { tab: "advanced", name: "Quality", groups: ["Quality score (keyword)", "Bid estimates"] },
     { tab: "advanced", name: "Video", groups: ["TrueView"] },
     { tab: "advanced", name: "Display", groups: ["Active View"] },
+    { tab: "advanced", name: "Shopping", groups: ["Product attributes"] },
+    { tab: "advanced", name: "PMax", groups: ["Asset groups", "Optimization"] },
+    { tab: "advanced", name: "Auction Insights", groups: ["Notes"] },
   ],
   fields: [
     // ─── Key metrics → Performance → Conversions ──────────────────────
