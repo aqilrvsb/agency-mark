@@ -94,6 +94,7 @@ export async function loadOverviewData(opts: {
   userId: string;
   start: string;
   end: string;
+  adAccountIds?: string[]; // optional filter — empty/undefined means all
 }): Promise<OverviewData | null> {
   const supabase = await createClient();
 
@@ -118,6 +119,28 @@ export async function loadOverviewData(opts: {
   // best-effort — never throws.
   await ensureFreshAdData({ brandId, fromDate: start, toDate: end });
 
+  // Optional Ad Account filter — apply at SQL level when present
+  const adAccountIds = opts.adAccountIds && opts.adAccountIds.length > 0
+    ? opts.adAccountIds
+    : null;
+
+  let currQ = supabase
+    .from("ad_data")
+    .select("platform, date_start, data")
+    .eq("brand_id", brandId)
+    .gte("date_start", start)
+    .lte("date_start", end);
+  let priorQ = supabase
+    .from("ad_data")
+    .select("platform, date_start, data")
+    .eq("brand_id", brandId)
+    .gte("date_start", priorStart)
+    .lte("date_start", priorEnd);
+  if (adAccountIds) {
+    currQ = currQ.in("platform_ad_account_id", adAccountIds);
+    priorQ = priorQ.in("platform_ad_account_id", adAccountIds);
+  }
+
   // Five parallel queries: current, prior, budget, brand_ad_accounts, annotations
   const [
     { data: currRows },
@@ -127,18 +150,8 @@ export async function loadOverviewData(opts: {
     { data: annotations },
     { data: kpiTargets },
   ] = await Promise.all([
-    supabase
-      .from("ad_data")
-      .select("platform, date_start, data")
-      .eq("brand_id", brandId)
-      .gte("date_start", start)
-      .lte("date_start", end),
-    supabase
-      .from("ad_data")
-      .select("platform, date_start, data")
-      .eq("brand_id", brandId)
-      .gte("date_start", priorStart)
-      .lte("date_start", priorEnd),
+    currQ,
+    priorQ,
     supabase.from("client_budgets").select("*").eq("brand_id", brandId).maybeSingle(),
     supabase
       .from("brand_ad_accounts")

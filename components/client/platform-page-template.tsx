@@ -3,6 +3,7 @@ import { HeroKPIStrip } from "./hero-kpi-strip";
 import { DualAxisChart } from "./dual-axis-chart";
 import { TopCampaignsTable } from "./top-campaigns-table";
 import { DateRangePicker } from "./date-range-picker";
+import { AdAccountFilter, type AdAccountOption } from "./ad-account-filter";
 import { ChartAnnotationsManager, type AnnotationItem } from "./chart-annotations-form";
 
 const fmtMyr = (n: number) =>
@@ -41,6 +42,7 @@ export interface PlatformPageProps {
   rows: AggregateRow[];
   annotations?: AnnotationItem[];
   brandId?: string;
+  adAccountOptions?: AdAccountOption[];
 }
 
 function levelLabel(level: "campaign" | "adset" | "ad", platformLabel: string): { plural: string; singular: string } {
@@ -64,6 +66,7 @@ export function PlatformPageTemplate({
   rows,
   annotations = [],
   brandId,
+  adAccountOptions = [],
 }: PlatformPageProps) {
   const labels = levelLabel(level, platformLabel);
 
@@ -137,7 +140,10 @@ export function PlatformPageTemplate({
             {labels.plural.toLowerCase()} from {range.start} to {range.end} ({range.days} days)
           </p>
         </div>
-        <DateRangePicker />
+        <div className="flex items-center gap-2 flex-wrap">
+          <AdAccountFilter accounts={adAccountOptions} />
+          <DateRangePicker />
+        </div>
       </header>
 
       <HeroKPIStrip tiles={tiles} />

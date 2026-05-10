@@ -10,8 +10,10 @@ import { ChannelBreakdown } from "@/components/client/channel-breakdown";
 import { BestCampaignCallout } from "@/components/client/best-campaign-callout";
 import { TopCampaignsTable } from "@/components/client/top-campaigns-table";
 import { DateRangePicker } from "@/components/client/date-range-picker";
+import { AdAccountFilter, type AdAccountOption } from "@/components/client/ad-account-filter";
 import { ChartAnnotationsManager } from "@/components/client/chart-annotations-form";
 import { GoalsProgressGrid } from "@/components/client/goals-progress-grid";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +25,37 @@ const fmtPct = (n: number) => `${n.toFixed(2)}%`;
 export default async function ClientOverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ start?: string; end?: string }>;
+  searchParams: Promise<{ start?: string; end?: string; ad_accounts?: string }>;
 }) {
   const params = await searchParams;
   const { start, end } = parseDateRange(params);
+  const adAccountIds = (params.ad_accounts ?? "").split(",").filter(Boolean);
   const user = await requireClient();
-  const raw = await loadOverviewData({ userId: user.id, start, end });
+  const raw = await loadOverviewData({ userId: user.id, start, end, adAccountIds });
+
+  // Pull this brand's discovered Ad Accounts so the filter chip can render
+  // them. Empty list means "no filter possible" → chip auto-hides.
+  const supabase = await createClient();
+  const { data: brandRow } = raw
+    ? await supabase
+        .from("brands")
+        .select("id")
+        .eq("assigned_client_user_id", user.id)
+        .maybeSingle()
+    : { data: null };
+  const { data: adAccounts } = brandRow
+    ? await supabase
+        .from("brand_platform_ad_accounts")
+        .select("platform, platform_ad_account_id, ad_account_name, currency")
+        .eq("brand_id", brandRow.id as string)
+        .order("ad_account_name", { ascending: true })
+    : { data: [] };
+  const adAccountOptions: AdAccountOption[] = (adAccounts ?? []).map((a) => ({
+    platform: a.platform as string,
+    platformAdAccountId: a.platform_ad_account_id as string,
+    adAccountName: (a.ad_account_name as string) ?? null,
+    currency: (a.currency as string) ?? null,
+  }));
 
   if (!raw) {
     return (
@@ -112,7 +139,10 @@ export default async function ClientOverviewPage({
               Performance dashboard · {data.range.start} hingga {data.range.end} ({data.range.days} hari)
             </p>
           </div>
-          <DateRangePicker />
+          <div className="flex items-center gap-2 flex-wrap">
+            <AdAccountFilter accounts={adAccountOptions} />
+            <DateRangePicker />
+          </div>
         </div>
       </header>
 

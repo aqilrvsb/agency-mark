@@ -30,6 +30,7 @@ export async function loadBrandLevelData(opts: {
   level: AdLevel;
   start?: string;
   end?: string;
+  adAccountIds?: string[]; // optional filter, empty = all accounts
 }) {
   const supabase = await createClient();
 
@@ -50,6 +51,7 @@ export async function loadBrandLevelData(opts: {
       priorDaily: [] as DailyPoint[],
       annotations: [] as { id: string; anchor_date: string; body: string; created_at: string; author_name: string | null }[],
       range: null,
+      adAccountOptions: [] as { platform: string; platformAdAccountId: string; adAccountName: string | null; currency: string | null }[],
     };
   }
 
@@ -65,21 +67,32 @@ export async function loadBrandLevelData(opts: {
   const priorEnd = isoMinusDays(startIso, 1);
   const priorStart = isoMinusDays(priorEnd, days - 1);
 
+  const adAccountIds = opts.adAccountIds && opts.adAccountIds.length > 0
+    ? opts.adAccountIds
+    : null;
+
+  let currQ = supabase
+    .from("ad_data")
+    .select("platform, date_start, data")
+    .eq("brand_id", brand.id as string)
+    .in("platform", opts.platforms)
+    .gte("date_start", startIso)
+    .lte("date_start", endIso);
+  let priorQ = supabase
+    .from("ad_data")
+    .select("platform, date_start, data")
+    .eq("brand_id", brand.id as string)
+    .in("platform", opts.platforms)
+    .gte("date_start", priorStart)
+    .lte("date_start", priorEnd);
+  if (adAccountIds) {
+    currQ = currQ.in("platform_ad_account_id", adAccountIds);
+    priorQ = priorQ.in("platform_ad_account_id", adAccountIds);
+  }
+
   const [{ data: currData }, { data: priorData }, { data: annotations }] = await Promise.all([
-    supabase
-      .from("ad_data")
-      .select("platform, date_start, data")
-      .eq("brand_id", brand.id as string)
-      .in("platform", opts.platforms)
-      .gte("date_start", startIso)
-      .lte("date_start", endIso),
-    supabase
-      .from("ad_data")
-      .select("platform, date_start, data")
-      .eq("brand_id", brand.id as string)
-      .in("platform", opts.platforms)
-      .gte("date_start", priorStart)
-      .lte("date_start", priorEnd),
+    currQ,
+    priorQ,
     supabase
       .from("chart_annotations")
       .select("id, anchor_date, body, created_at, users(full_name)")
@@ -88,6 +101,20 @@ export async function loadBrandLevelData(opts: {
       .lte("anchor_date", endIso)
       .order("anchor_date", { ascending: true }),
   ]);
+
+  // Pull discovered Ad Accounts so the platform page can render the filter chip
+  const { data: adAccounts } = await supabase
+    .from("brand_platform_ad_accounts")
+    .select("platform, platform_ad_account_id, ad_account_name, currency")
+    .eq("brand_id", brand.id as string)
+    .in("platform", opts.platforms)
+    .order("ad_account_name", { ascending: true });
+  const adAccountOptions = (adAccounts ?? []).map((a) => ({
+    platform: a.platform as string,
+    platformAdAccountId: a.platform_ad_account_id as string,
+    adAccountName: (a.ad_account_name as string) ?? null,
+    currency: (a.currency as string) ?? null,
+  }));
 
   const rows = aggregateAdData(currData ?? [], opts.level);
   const totals = summarize(rows);
@@ -147,5 +174,6 @@ export async function loadBrandLevelData(opts: {
     priorDaily,
     annotations: annotationItems,
     range: { start: startIso, end: endIso, days },
+    adAccountOptions,
   };
 }

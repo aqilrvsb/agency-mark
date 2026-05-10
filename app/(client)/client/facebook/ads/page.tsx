@@ -8,10 +8,11 @@ export const dynamic = "force-dynamic";
 export default async function FacebookAdsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ start?: string; end?: string }>;
+  searchParams: Promise<{ start?: string; end?: string; ad_accounts?: string }>;
 }) {
   const params = await searchParams;
   const { start, end } = parseDateRange(params);
+  const adAccountIds = (params.ad_accounts ?? "").split(",").filter(Boolean);
   const user = await requireClient();
   const data = await loadBrandLevelData({
     userId: user.id,
@@ -19,6 +20,7 @@ export default async function FacebookAdsPage({
     level: "ad",
     start,
     end,
+    adAccountIds,
   });
 
   return (
@@ -35,6 +37,7 @@ export default async function FacebookAdsPage({
       rows={data.rows}
       annotations={data.annotations}
       brandId={data.brand?.id}
+      adAccountOptions={data.adAccountOptions}
     />
   );
 }
