@@ -32,9 +32,9 @@ export default async function ClientReportsPage() {
   const months = Array.from(monthly.entries()).sort((a, b) => b[0].localeCompare(a[0]));
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
       <header className="mb-8">
-        <h1 className="font-display font-extrabold text-4xl mb-2">Reports</h1>
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl mb-2">Reports</h1>
         <p className="text-[var(--color-text-secondary)]">{brand.name as string} · Monthly summary</p>
       </header>
 

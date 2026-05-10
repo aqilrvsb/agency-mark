@@ -30,9 +30,9 @@ export default async function ClientSupportPage() {
   const agencyName = (brand?.companies as { name: string } | null)?.name ?? "your agency";
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
       <header className="mb-8">
-        <h1 className="font-display font-extrabold text-4xl mb-2">Support</h1>
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl mb-2">Support</h1>
         <p className="text-[var(--color-text-secondary)]">
           Need help? Reach out to {agencyName} directly.
         </p>

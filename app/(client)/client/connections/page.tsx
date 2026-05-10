@@ -70,9 +70,9 @@ export default async function ClientConnectionsPage({
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
       <header className="mb-8">
-        <h1 className="font-display font-extrabold text-4xl mb-2">Connect ad accounts</h1>
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl mb-2">Connect ad accounts</h1>
         <p className="text-[var(--color-text-secondary)]">
           Link your Facebook, Google, and TikTok ad accounts so {brand?.name ? `${brand.name as string}'s` : "your"} performance flows into this dashboard automatically.
         </p>

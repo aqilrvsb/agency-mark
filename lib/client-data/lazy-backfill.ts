@@ -62,7 +62,22 @@ export async function ensureFreshAdData(opts: {
       return { triggered: false, reason: "cache_hit" };
     }
 
-    // Otherwise trigger a sync for the requested window
+    // WARM-BUT-STALE: we have data in the window already; the user can read
+    // it immediately. Fire the refresh in the background (no await) so the
+    // page render isn't blocked by the per-ad analytics calls (~2-15s).
+    if (hasAnyRowsInWindow) {
+      void syncBrandWindow({
+        brandId: opts.brandId,
+        fromDate: opts.fromDate,
+        toDate: opts.toDate,
+      }).catch(() => {
+        // best-effort; sync log captures the error trace
+      });
+      return { triggered: true, reason: "stale_cache_async" };
+    }
+
+    // COLD: no rows in window. Block on the sync — there's nothing to render
+    // otherwise.
     const result = await syncBrandWindow({
       brandId: opts.brandId,
       fromDate: opts.fromDate,
@@ -72,7 +87,7 @@ export async function ensureFreshAdData(opts: {
     const totalRows = Object.values(result.rowsByPlatform).reduce((s, n) => s + n, 0);
     return {
       triggered: true,
-      reason: hasAnyRowsInWindow ? "stale_cache" : "cold_window",
+      reason: "cold_window",
       rowsAdded: totalRows,
       errors: result.errors,
     };

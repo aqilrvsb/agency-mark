@@ -72,7 +72,7 @@ export function TopCampaignsTable({ rows, drillBase }: { rows: AggregateRow[]; d
           </div>
           <div className="text-sm font-bold">{filtered.length} of {rows.length} campaign{rows.length === 1 ? "" : "s"}</div>
         </div>
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <FilterChip
             active={statusFilter === "all"}
             onClick={() => setStatusFilter("all")}

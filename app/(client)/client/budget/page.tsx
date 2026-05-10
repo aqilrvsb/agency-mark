@@ -18,16 +18,16 @@ export default async function ClientBudgetPage() {
   ]);
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
       <header className="mb-8">
-        <h1 className="font-display font-extrabold text-4xl mb-2">Budget</h1>
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl mb-2">Budget</h1>
         <p className="text-[var(--color-text-secondary)]">{brand.name as string}</p>
       </header>
 
       <Card className="mb-6 !p-8 text-center" style={{ background: "linear-gradient(135deg, rgba(200,245,62,0.08) 0%, rgba(200,245,62,0.02) 100%)", borderColor: "rgba(200,245,62,0.3)" }}>
         <Wallet className="w-12 h-12 mx-auto mb-3" style={{ color: "var(--color-lime)" }} />
         <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold mb-2">Current balance</div>
-        <div className="font-display font-extrabold text-6xl mb-3" style={{ color: "var(--color-lime)" }}>
+        <div className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl mb-3 break-words" style={{ color: "var(--color-lime)" }}>
           RM {Number(budget?.current_balance_myr ?? 0).toLocaleString()}
         </div>
         <div className="text-sm text-[var(--color-text-secondary)]">
