@@ -2,8 +2,54 @@ import { NextResponse } from "next/server";
 import { requireClient } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getZernio } from "@/lib/zernio/client";
+import { getZernio, emailTag } from "@/lib/zernio/client";
 import { syncBrandConnections } from "@/lib/zernio/sync-connections";
+
+/**
+ * Get the brand's Zernio profile id, with three layers of recovery so we
+ * stay self-healing when the user externally edits Zernio:
+ *   1. brands.zernio_profile_id is set AND the profile still exists in
+ *      Zernio (validated by listProfiles) → use it
+ *   2. brands.zernio_profile_id is null OR points to a deleted profile,
+ *      but Zernio has a profile whose description carries the email tag
+ *      → reuse that one (heals "I deleted, then re-registered" cases)
+ *   3. Neither — create a fresh Zernio profile and persist its id
+ */
+async function getOrCreateZernioProfileId(args: {
+  brandId: string;
+  brandName: string;
+  storedProfileId: string | null;
+  email: string;
+}): Promise<string> {
+  const { brandId, brandName, storedProfileId, email } = args;
+  const zernio = getZernio();
+  const admin = createAdminClient();
+
+  // Always list once — we use this for validation + email-tag fallback.
+  const { profiles } = await zernio.listProfiles();
+  const valid = (id: string) => profiles.some((p) => p._id === id);
+
+  // (1) stored id still valid in Zernio
+  if (storedProfileId && valid(storedProfileId)) return storedProfileId;
+
+  // (2) recover by email tag in description
+  const tag = emailTag(email);
+  const byEmail = profiles.find((p) => (p.description ?? "").includes(tag));
+  if (byEmail) {
+    if (storedProfileId !== byEmail._id) {
+      await admin.from("brands").update({ zernio_profile_id: byEmail._id }).eq("id", brandId);
+    }
+    return byEmail._id;
+  }
+
+  // (3) create fresh
+  const created = await zernio.createProfile({
+    name: `${brandName} (AdSolution)`,
+    description: `${tag} Auto-created for AdSolution brand ${brandId}`,
+  });
+  await admin.from("brands").update({ zernio_profile_id: created._id }).eq("id", brandId);
+  return created._id;
+}
 
 // URL platform slug → Zernio /connect/{platform}/ads value
 // Same-token platforms (facebook, instagram, linkedin, pinterest) re-use the
@@ -49,39 +95,20 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
 
   const zernio = getZernio();
 
-  // Auto-provision a Zernio Profile for this brand. One profile per brand —
-  // holds every connected SocialAccount across every platform.
-  let profileId = brand.zernio_profile_id as string | null;
-  if (!profileId) {
-    try {
-      const profile = await zernio.createProfile({
-        name: `${brand.name} (AdSolution)`,
-        description: `Auto-created for AdSolution brand ${brand.id}`,
-      });
-      profileId = profile._id;
-      const admin = createAdminClient();
-      await admin
-        .from("brands")
-        .update({ zernio_profile_id: profileId })
-        .eq("id", brand.id as string);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Failed to create Zernio profile";
-      if (msg.includes("already exists")) {
-        const { profiles } = await zernio.listProfiles();
-        const match = profiles.find((p) => p.name === `${brand.name} (AdSolution)`);
-        if (match) {
-          profileId = match._id;
-          const admin = createAdminClient();
-          await admin
-            .from("brands")
-            .update({ zernio_profile_id: profileId })
-            .eq("id", brand.id as string);
-        }
-      }
-      if (!profileId) {
-        return NextResponse.json({ error: msg }, { status: 500 });
-      }
-    }
+  // Resolve a valid Zernio profile id (self-healing — recreates if the
+  // profile was deleted externally on the Zernio dashboard).
+  let profileId: string;
+  try {
+    profileId = await getOrCreateZernioProfileId({
+      brandId: brand.id as string,
+      brandName: brand.name as string,
+      storedProfileId: (brand.zernio_profile_id as string | null) ?? null,
+      email: user.email,
+    });
+  } catch (e) {
+    return NextResponse.json({
+      error: e instanceof Error ? e.message : "Failed to create/find Zernio profile",
+    }, { status: 500 });
   }
 
   // Connect ADS specifically. /v1/connect/{platform}/ads is the only endpoint
