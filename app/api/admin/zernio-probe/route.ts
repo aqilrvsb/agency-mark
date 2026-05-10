@@ -18,6 +18,8 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const brandId = url.searchParams.get("brand_id");
+  const fromParam = url.searchParams.get("from");
+  const toParam = url.searchParams.get("to");
   const days = Math.min(730, Math.max(7, Number(url.searchParams.get("days") ?? 365)));
   if (!brandId) return NextResponse.json({ error: "brand_id required" }, { status: 400 });
 
@@ -35,10 +37,16 @@ export async function GET(req: Request) {
   }
 
   const base = "https://zernio.com/api/v1";
-  const today = new Date().toISOString().slice(0, 10);
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-  const fromDate = startDate.toISOString().slice(0, 10);
+  // Explicit ?from=YYYY-MM-DD&to=YYYY-MM-DD takes priority; fallback to days=N
+  const today = toParam ?? new Date().toISOString().slice(0, 10);
+  let fromDate: string;
+  if (fromParam) {
+    fromDate = fromParam;
+  } else {
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - days);
+    fromDate = startDate.toISOString().slice(0, 10);
+  }
 
   const probes: Record<string, unknown>[] = [];
 
@@ -90,10 +98,10 @@ export async function GET(req: Request) {
         adProbe.adsError = e instanceof Error ? e.message : String(e);
       }
 
-      // /v1/ads/campaigns
+      // /v1/ads/campaigns (with optional date filter — Zernio aggregates from /v1/ads)
       try {
         const r = await fetch(
-          `${base}/ads/campaigns?adAccountId=${encodeURIComponent(adAcc.id)}&platform=facebook&limit=5&source=all`,
+          `${base}/ads/campaigns?adAccountId=${encodeURIComponent(adAcc.id)}&platform=facebook&limit=5&source=all&fromDate=${fromDate}&toDate=${today}`,
           { headers: { Authorization: `Bearer ${apiKey}` } }
         );
         adProbe.campaignsStatus = r.status;
