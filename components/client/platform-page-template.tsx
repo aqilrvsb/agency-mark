@@ -40,11 +40,13 @@ export interface PlatformPageProps {
   rows: AggregateRow[];
 }
 
-const LEVEL_LABEL = {
-  campaign: { plural: "Campaigns", singular: "Campaign" },
-  adset: { plural: "Ad Sets / Ad Groups", singular: "Ad Set" },
-  ad: { plural: "Ads", singular: "Ad" },
-} as const;
+function levelLabel(level: "campaign" | "adset" | "ad", platformLabel: string): { plural: string; singular: string } {
+  if (level === "campaign") return { plural: "Campaigns", singular: "Campaign" };
+  if (level === "ad") return { plural: "Ads", singular: "Ad" };
+  // Meta = Ad Sets; Google + TikTok = Ad Groups
+  const isMeta = platformLabel.toLowerCase().includes("facebook") || platformLabel.toLowerCase().includes("meta");
+  return isMeta ? { plural: "Ad Sets", singular: "Ad Set" } : { plural: "Ad Groups", singular: "Ad Group" };
+}
 
 export function PlatformPageTemplate({
   platformLabel,
@@ -58,7 +60,7 @@ export function PlatformPageTemplate({
   priorDaily,
   rows,
 }: PlatformPageProps) {
-  const labels = LEVEL_LABEL[level];
+  const labels = levelLabel(level, platformLabel);
 
   if (!totals || !deltas || !range) {
     return (
