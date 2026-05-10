@@ -2,7 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { Megaphone } from "lucide-react";
 import type { AggregateRow } from "@/lib/client-data/aggregate";
+import { EmptyState } from "./empty-state";
 
 const fmtMyr = (n: number) =>
   `RM ${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -51,9 +53,14 @@ export function TopCampaignsTable({ rows, drillBase }: { rows: AggregateRow[]; d
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-muted)]">
-        No campaigns yet. Once your accounts sync, top performers will rank here.
-      </div>
+      <EmptyState
+        icon={<Megaphone className="w-5 h-5 text-[var(--color-text-muted)]" />}
+        title="No campaigns yet"
+        description="Once your ad accounts are connected and synced, your top-performing campaigns will rank here automatically — no setup needed."
+        actionHref="/client/connections"
+        actionLabel="Connect ad accounts"
+        compact
+      />
     );
   }
   return (

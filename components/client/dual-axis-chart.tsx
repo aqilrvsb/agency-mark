@@ -1,4 +1,6 @@
 import type { DailyPoint } from "@/lib/client-data/overview-data";
+import { EmptyState } from "./empty-state";
+import { LineChart } from "lucide-react";
 
 interface ChartAnnotation {
   id: string;
@@ -20,8 +22,15 @@ export function DualAxisChart({
 }) {
   if (current.length === 0) {
     return (
-      <div className="rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)] p-8 mb-6 text-center text-sm text-[var(--color-text-muted)]">
-        No spend recorded in this period yet. Once your accounts sync, daily trend will appear here.
+      <div className="mb-6">
+        <EmptyState
+          icon={<LineChart className="w-5 h-5 text-[var(--color-text-muted)]" />}
+          title="No spend recorded in this period yet"
+          description="Once your ad accounts are connected and synced, the daily spend & revenue trend will appear here. Sync runs every hour."
+          actionHref="/client/connections"
+          actionLabel="Connect ad accounts"
+          compact
+        />
       </div>
     );
   }
