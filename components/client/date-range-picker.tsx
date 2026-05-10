@@ -24,7 +24,11 @@ export function DateRangePicker() {
   const pathname = usePathname();
   const search = useSearchParams();
 
-  const [start, setStart] = useState(search.get("start") ?? isoDaysAgo(30));
+  // Default 90 days — matches Zernio's discovery backfill window AND
+  // the server-side parseDateRange() default in lib/client-data/aggregate.ts.
+  // Out-of-sync defaults caused the picker to show "10-Apr → 10-May"
+  // (30 days) while the page heading + data correctly used 91 days.
+  const [start, setStart] = useState(search.get("start") ?? isoDaysAgo(90));
   const [end, setEnd] = useState(search.get("end") ?? todayIso());
 
   function apply(s: string, e: string) {
