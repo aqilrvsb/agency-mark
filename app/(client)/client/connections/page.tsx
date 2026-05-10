@@ -3,6 +3,7 @@ import { requireClient } from "@/lib/auth/guards";
 import { Card, CardTitle, CardDescription, CardHeader } from "@/components/ui/card";
 import { Plug, CheckCircle2, AlertCircle } from "lucide-react";
 import { ConnectButton } from "./connect-button";
+import { syncBrandConnections } from "@/lib/zernio/sync-connections";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,17 @@ export default async function ClientConnectionsPage({
     .select("id, name")
     .eq("assigned_client_user_id", user.id)
     .maybeSingle();
+
+  // Reconcile Zernio's connections into our brand_ad_accounts. Best-effort —
+  // page still renders if Zernio is down. This keeps the "Connected" badge
+  // accurate without needing webhook plumbing.
+  if (brand?.id) {
+    try {
+      await syncBrandConnections(brand.id as string);
+    } catch (e) {
+      console.error("[connections page] zernio sync failed:", e);
+    }
+  }
 
   const { data: connections } = brand
     ? await supabase

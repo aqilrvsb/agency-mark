@@ -6,12 +6,21 @@
 export type ZernioPlatform = "facebook" | "instagram" | "tiktok" | "linkedin" | "twitter" | "pinterest" | "youtube";
 
 export interface ZernioAccount {
-  id: string;
+  _id: string;
   platform: ZernioPlatform;
-  handle: string;
-  display_name?: string;
-  is_active: boolean;
-  connected_at: string;
+  username?: string;
+  displayName?: string;
+  isActive?: boolean;
+  enabled?: boolean;
+  platformStatus?: string;
+  adsStatus?: string;
+  profileId?: { _id: string; name?: string } | string;
+  metadata?: {
+    selectedPageId?: string;
+    selectedPageName?: string;
+    [k: string]: unknown;
+  };
+  createdAt?: string;
 }
 
 export interface ZernioAdAnalyticsRow {
@@ -62,8 +71,9 @@ export class ZernioClient {
     return res.json() as Promise<T>;
   }
 
-  async listAccounts(): Promise<ZernioAccount[]> {
-    const res = await this.request<{ accounts: ZernioAccount[] } | ZernioAccount[]>("/accounts");
+  async listAccounts(opts?: { profileId?: string }): Promise<ZernioAccount[]> {
+    const qs = opts?.profileId ? `?profileId=${encodeURIComponent(opts.profileId)}` : "";
+    const res = await this.request<{ accounts: ZernioAccount[] } | ZernioAccount[]>(`/accounts${qs}`);
     return Array.isArray(res) ? res : res.accounts;
   }
 
