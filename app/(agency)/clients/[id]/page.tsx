@@ -147,8 +147,8 @@ export default async function ClientHubPage({
         rows={allRows}
         budget={budget}
         supabase={supabase}
-        last30Iso={start30}
-        today={today}
+        last30Iso={start}
+        today={end}
         brand={brand}
       />
     </div>
