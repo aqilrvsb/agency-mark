@@ -115,35 +115,88 @@ export async function syncBrandWindow(opts: {
             source: "all",
           });
           adsScanned += r.ads.length;
+          // Two-pass strategy:
+          //  1. Summary pass — for every ad with any non-zero metric, write
+          //     one row dated to opts.toDate. Cheap (one /v1/ads call per
+          //     page already gave us the metrics).
+          //  2. Daily-enhance pass — for ads with substantive spend, swap
+          //     the summary row for per-day rows from /v1/ads/{adId}/analytics.
+          //     Throttled to 1 call / 1.1s to stay under Zernio's 60 req/min.
+          //     If we hit the rate limit anyway, fall back to the summary
+          //     row already in the buffer.
+          interface AdSnap {
+            ad: ZernioAd;
+            metrics: ZernioAdMetrics;
+            adId: string;
+          }
+          const snaps: AdSnap[] = [];
           for (const ad of r.ads) {
             const adId = ad._id ?? ad.id;
             if (!adId) continue;
-            // Use the summary metrics from /v1/ads directly. Per-ad daily
-            // breakdown via /v1/ads/{adId}/analytics would give richer data
-            // for the chart, but Zernio's 60-req/min rate limit makes that
-            // non-viable for accounts with many ads inside a Vercel
-            // function timeout. Write one summary row per ad dated to the
-            // window's toDate; KPIs and Top Campaigns aggregate correctly.
             const m = (ad as { metrics?: ZernioAdMetrics }).metrics ?? {};
             const lastSyncedAt = (m as { lastSyncedAt?: string }).lastSyncedAt;
-            // Skip ads Zernio hasn't synced yet (lastSyncedAt null = no metrics)
-            // unless they have any non-zero metric (some ads sync without
-            // setting lastSyncedAt for inherited campaign metrics).
             const hasAnyMetric =
               num(m.spend) > 0 ||
               num(m.impressions) > 0 ||
               num(m.clicks) > 0 ||
               num(m.conversions) > 0;
             if (!lastSyncedAt && !hasAnyMetric) continue;
+            snaps.push({ ad, metrics: m, adId });
+          }
 
+          // Summary rows for everyone
+          for (const s of snaps) {
             insertsThisAccount.push(toRow({
               companyId,
               brandId: opts.brandId,
               internalPlatform,
               adAccount: adAcc,
-              ad,
-              day: { ...m, date: opts.toDate },
+              ad: s.ad,
+              day: { ...s.metrics, date: opts.toDate },
             }));
+          }
+
+          // Daily-enhance for ads with spend > 0 (skip the rest to save calls)
+          const enhanceTargets = snaps.filter((s) => num(s.metrics.spend) > 0);
+          let rateLimited = false;
+          for (let i = 0; i < enhanceTargets.length && !rateLimited; i++) {
+            const s = enhanceTargets[i];
+            try {
+              const analytics = await zernio.getAdAnalytics(s.adId, {
+                fromDate: opts.fromDate,
+                toDate: opts.toDate,
+              });
+              const dailyRows = analytics.analytics.daily ?? [];
+              if (dailyRows.length > 0) {
+                // Drop the summary row for this ad, replace with per-day rows
+                const summaryIdx = insertsThisAccount.findIndex(
+                  (row) => row.ad_id === s.adId
+                );
+                if (summaryIdx >= 0) insertsThisAccount.splice(summaryIdx, 1);
+                for (const day of dailyRows) {
+                  insertsThisAccount.push(toRow({
+                    companyId,
+                    brandId: opts.brandId,
+                    internalPlatform,
+                    adAccount: adAcc,
+                    ad: s.ad,
+                    day,
+                  }));
+                }
+              }
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : String(e);
+              if (msg.includes("429") || msg.toLowerCase().includes("rate limit")) {
+                rateLimited = true;
+                errors.push(`getAdAnalytics rate-limited at ad ${i + 1}/${enhanceTargets.length} — falling back to summary rows for the rest`);
+              } else {
+                errors.push(`getAdAnalytics(${s.adId}): ${msg}`);
+              }
+            }
+            // Throttle: 1100ms between calls keeps us under 60 req/min
+            if (i < enhanceTargets.length - 1) {
+              await new Promise((r) => setTimeout(r, 1100));
+            }
           }
           if (r.pagination.page >= r.pagination.pages) break;
         }
