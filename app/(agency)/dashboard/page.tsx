@@ -1,13 +1,19 @@
-import { createClient } from "@/lib/supabase/server";
 import { requireAgencyStaff } from "@/lib/auth/guards";
 import { Card } from "@/components/ui/card";
-import { Wallet, TrendingUp, Users, Target } from "lucide-react";
 import Link from "next/link";
+import { Plus, Users, Megaphone, BarChart3, CreditCard, AlertTriangle } from "lucide-react";
+import { loadDashboardData } from "@/lib/agency-data/dashboard-data";
+import { AgencyHeroStrip } from "@/components/agency/agency-hero-strip";
+import { ClientTile } from "@/components/agency/client-tile";
+
+export const dynamic = "force-dynamic";
+
+const fmtMyr = (n: number) =>
+  `RM ${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const fmtInt = (n: number) => n.toLocaleString();
 
 export default async function DashboardOverviewPage() {
   const user = await requireAgencyStaff();
-  const supabase = await createClient();
-
   if (!user.company_id) {
     return (
       <div className="p-8">
@@ -16,134 +22,160 @@ export default async function DashboardOverviewPage() {
     );
   }
 
-  // Aggregate today's performance across this agency's clients
-  const today = new Date().toISOString().slice(0, 10);
-  const last7 = new Date();
-  last7.setDate(last7.getDate() - 7);
-  const last7Iso = last7.toISOString().slice(0, 10);
+  const data = await loadDashboardData({ companyId: user.company_id });
 
-  const [{ data: brands }, { data: adData }, { data: alerts }] = await Promise.all([
-    supabase.from("brands").select("id, name").eq("company_id", user.company_id).eq("is_active", true),
-    supabase
-      .from("ad_data")
-      .select("brand_id, platform, date_start, data")
-      .eq("company_id", user.company_id)
-      .gte("date_start", last7Iso),
-    supabase.from("alert_history").select("id").eq("company_id", user.company_id).eq("is_read", false),
-  ]);
+  const heroTiles = [
+    {
+      label: "Spend (7d)",
+      value: fmtMyr(data.totals.spend),
+      delta: data.totals.spendDelta,
+      positiveIsGood: false,
+      accent: "text-[var(--color-orange)]",
+    },
+    {
+      label: "Revenue (7d)",
+      value: fmtMyr(data.totals.revenue),
+      delta: data.totals.revenueDelta,
+      positiveIsGood: true,
+      accent: "text-emerald-400",
+    },
+    {
+      label: "Blended ROAS",
+      value: data.totals.roas > 0 ? `${data.totals.roas.toFixed(2)}×` : "—",
+      delta: data.totals.roasDelta,
+      positiveIsGood: true,
+      accent: "text-[var(--color-amber)]",
+    },
+    {
+      label: "Conversions",
+      value: fmtInt(data.totals.conversions),
+      delta: data.totals.conversionsDelta,
+      positiveIsGood: true,
+      accent: "text-[var(--color-lime)]",
+    },
+  ];
 
-  // Aggregate metrics
-  let totalSpend = 0;
-  let totalImpressions = 0;
-  let totalClicks = 0;
-  let totalConversions = 0;
-  for (const row of adData ?? []) {
-    const d = row.data as Record<string, unknown>;
-    totalSpend += Number(d.spend ?? 0);
-    totalImpressions += Number(d.impressions ?? 0);
-    totalClicks += Number(d.clicks ?? 0);
-    totalConversions += Number(d.conversions ?? d.results ?? 0);
-  }
-  const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0";
-  const avgCpa = totalConversions > 0 ? (totalSpend / totalConversions).toFixed(2) : "—";
+  const alertCount = data.brands.filter((b) => b.status === "alert").length;
+  const warnCount = data.brands.filter((b) => b.status === "warn").length;
+  const healthyCount = data.brands.filter((b) => b.status === "healthy").length;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <header className="mb-8">
-        <h1 className="font-display font-extrabold text-4xl mb-2">Welcome back, {user.full_name.split(" ")[0]}</h1>
-        <p className="text-[var(--color-text-secondary)]">
-          Overview untuk 7 hari terakhir · {brands?.length ?? 0} clients aktif
-        </p>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      <header className="mb-6 flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="font-display font-extrabold text-3xl lg:text-4xl mb-1">
+            Welcome back, {user.full_name.split(" ")[0]}
+          </h1>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            {data.totals.activeBrands} of {data.totals.totalBrands} brands active · {data.range.start} → {data.range.end}
+          </p>
+        </div>
+        <Link
+          href="/clients/new"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold bg-[var(--color-orange)] text-[#0a0a0a] hover:bg-[var(--color-orange-hover)] transition"
+        >
+          <Plus className="w-4 h-4" /> Add client
+        </Link>
       </header>
 
-      {(alerts?.length ?? 0) > 0 && (
-        <Card className="mb-6 !border-amber-500/30 !bg-amber-500/5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-bold text-amber-300">{alerts!.length} alert(s) baru</div>
-              <div className="text-sm text-[var(--color-text-secondary)] mt-0.5">
-                KPI ada yang melampaui threshold. Click untuk review.
+      {data.unreadAlerts > 0 && (
+        <Link
+          href="/notifications"
+          className="block rounded-2xl mb-6 border border-amber-500/30 bg-amber-500/5 p-4 hover:bg-amber-500/10 transition"
+        >
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-300" />
+            <div className="flex-1">
+              <div className="font-bold text-amber-300">
+                {data.unreadAlerts} unread alert{data.unreadAlerts === 1 ? "" : "s"}
+              </div>
+              <div className="text-xs text-[var(--color-text-secondary)]">
+                Click to review KPI threshold breaches.
               </div>
             </div>
-            <Link href="/analytics" className="text-sm font-bold text-amber-400 hover:underline">View →</Link>
+            <span className="text-amber-300 text-sm font-bold">View →</span>
           </div>
-        </Card>
+        </Link>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <KPI icon={Wallet} label="Spend (7d)" value={`RM ${totalSpend.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} color="orange" />
-        <KPI icon={TrendingUp} label="Impressions" value={totalImpressions.toLocaleString()} color="lime" />
-        <KPI icon={Target} label="CTR" value={`${avgCtr}%`} color="amber" />
-        <KPI icon={Users} label="CPA avg" value={avgCpa === "—" ? avgCpa : `RM ${avgCpa}`} color="emerald" />
-      </div>
+      <AgencyHeroStrip tiles={heroTiles} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          <Card>
-            <h2 className="font-display font-bold text-xl mb-4">Top clients (by spend)</h2>
-            <div className="space-y-2">
-              {(brands ?? []).slice(0, 8).map((b) => {
-                const brandSpend = (adData ?? [])
-                  .filter((r) => r.brand_id === b.id)
-                  .reduce((sum, r) => sum + Number((r.data as Record<string, unknown>).spend ?? 0), 0);
-                return (
-                  <Link
-                    key={b.id as string}
-                    href={`/clients/${b.id}`}
-                    className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition"
-                  >
-                    <span className="font-medium">{b.name as string}</span>
-                    <span className="font-mono text-sm text-[var(--color-orange)]">
-                      RM {brandSpend.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    </span>
-                  </Link>
-                );
-              })}
-              {(brands ?? []).length === 0 && (
-                <Link href="/clients" className="block text-center py-8 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
-                  No clients yet → click here to add your first
-                </Link>
+      {/* Client tiles grid */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-bold mb-0.5">
+              Clients
+            </div>
+            <div className="text-sm font-bold flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" /> {healthyCount} healthy
+              </span>
+              {warnCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" /> {warnCount} watch
+                </span>
+              )}
+              {alertCount > 0 && (
+                <span className="flex items-center gap-1 text-red-300">
+                  <span className="w-2 h-2 rounded-full bg-red-400" /> {alertCount} alert
+                </span>
               )}
             </div>
-          </Card>
+          </div>
+          <Link href="/clients" className="text-xs font-bold text-[var(--color-orange)] hover:underline">
+            View all →
+          </Link>
         </div>
 
-        <Card>
-          <h2 className="font-display font-bold text-xl mb-4">Quick actions</h2>
-          <div className="space-y-2">
-            <Link href="/clients" className="block p-3 rounded-xl bg-[var(--color-bg-soft)] hover:bg-white/5 transition text-sm font-medium">
-              📋 Manage clients
+        {data.brands.length === 0 ? (
+          <Card className="text-center py-12">
+            <div className="text-sm text-[var(--color-text-muted)] mb-3">No clients yet.</div>
+            <Link
+              href="/clients/new"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-[var(--color-orange)] text-[#0a0a0a]"
+            >
+              <Plus className="w-4 h-4" /> Add your first client
             </Link>
-            <Link href="/campaigns" className="block p-3 rounded-xl bg-[var(--color-bg-soft)] hover:bg-white/5 transition text-sm font-medium">
-              📊 View campaigns
-            </Link>
-            <Link href="/analytics" className="block p-3 rounded-xl bg-[var(--color-bg-soft)] hover:bg-white/5 transition text-sm font-medium">
-              📈 Open analytics
-            </Link>
-            <Link href="/invoices" className="block p-3 rounded-xl bg-[var(--color-bg-soft)] hover:bg-white/5 transition text-sm font-medium">
-              💳 Invoices
-            </Link>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {data.brands.slice(0, 12).map((tile) => (
+              <ClientTile key={tile.id} tile={tile} />
+            ))}
           </div>
-        </Card>
+        )}
+      </div>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <QuickAction href="/clients" icon={Users} label="Manage clients" />
+        <QuickAction href="/campaigns" icon={Megaphone} label="View campaigns" />
+        <QuickAction href="/analytics" icon={BarChart3} label="Open analytics" />
+        <QuickAction href="/invoices" icon={CreditCard} label="Invoices" />
       </div>
     </div>
   );
 }
 
-function KPI({ icon: Icon, label, value, color }: { icon: typeof Wallet; label: string; value: string; color: string }) {
-  const map: Record<string, string> = {
-    orange: "var(--color-orange)",
-    lime: "var(--color-lime)",
-    amber: "var(--color-amber)",
-    emerald: "var(--color-emerald)",
-  };
+function QuickAction({
+  href,
+  icon: Icon,
+  label,
+}: {
+  href: string;
+  icon: typeof Users;
+  label: string;
+}) {
   return (
-    <Card className="!p-5">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold">{label}</div>
-        <Icon className="w-4 h-4" style={{ color: map[color] }} />
+    <Link
+      href={href}
+      className="flex items-center gap-3 p-4 rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)] hover:border-white/10 hover:bg-white/[0.03] transition group"
+    >
+      <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-[var(--color-orange)]/15 transition">
+        <Icon className="w-4 h-4 text-[var(--color-text-secondary)] group-hover:text-[var(--color-orange)] transition" />
       </div>
-      <div className="font-display font-extrabold text-2xl" style={{ color: map[color] }}>{value}</div>
-    </Card>
+      <span className="text-sm font-bold">{label}</span>
+    </Link>
   );
 }
