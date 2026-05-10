@@ -33,17 +33,17 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isAuthPage = path === "/login" || path === "/register" || path === "/forgot-password";
 
-  // Three protected portals + role mapping:
-  //   /platform/*  -> platform_admin (master admin)
-  //   /dashboard/* -> bod, leader, marketer (agency staff)
-  //   /client/*    -> client (agency's client)
+  // Post-Fighter pivot: two roles —
+  //   /platform/*       -> platform_admin (us)
+  //   /marketer/* + /client/* -> marketer (every regular user)
+  // The (agency)/* surface is retired; if a marketer hits it via a stale
+  // bookmark, the page-level requireAgencyStaff() guard redirects them
+  // to /client/overview. We don't enforce it at the middleware layer
+  // anymore (was causing redirect loops).
   const isPlatform = path.startsWith("/platform");
-  const isAgencyDash = path.startsWith("/dashboard") || path.startsWith("/clients") ||
-                       path.startsWith("/campaigns") || path.startsWith("/analytics") ||
-                       path.startsWith("/staff") || path.startsWith("/invoices") ||
-                       path.startsWith("/settings");
+  const isMarketerArea = path.startsWith("/marketer");
   const isClientPortal = path === "/client" || path.startsWith("/client/");
-  const isProtected = isPlatform || isAgencyDash || isClientPortal;
+  const isProtected = isPlatform || isMarketerArea || isClientPortal;
 
   if (!user && isProtected) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -63,21 +63,9 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Role-based access enforcement
-    if (profile) {
-      // Platform admin can access everything
-      if (profile.role === "platform_admin") {
-        // Allow all — they own the system
-      } else if (isPlatform) {
-        // Non-platform users blocked from /platform
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      } else if (isClientPortal && profile.role !== "client") {
-        // Only clients access /client
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      } else if (isAgencyDash && profile.role === "client") {
-        // Clients can't access agency dashboard
-        return NextResponse.redirect(new URL("/client/overview", request.url));
-      }
+    // Role gates — only platform admin gets /platform
+    if (profile && profile.role !== "platform_admin" && isPlatform) {
+      return NextResponse.redirect(new URL("/client/overview", request.url));
     }
   }
 
@@ -89,10 +77,7 @@ export async function updateSession(request: NextRequest) {
       .eq("id", user.id)
       .maybeSingle();
 
-    const dest =
-      profile?.role === "platform_admin" ? "/platform" :
-      profile?.role === "client" ? "/client/overview" :
-      "/dashboard";
+    const dest = profile?.role === "platform_admin" ? "/platform" : "/client/overview";
     return NextResponse.redirect(new URL(dest, request.url));
   }
 
