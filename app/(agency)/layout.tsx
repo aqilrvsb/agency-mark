@@ -2,13 +2,14 @@ import { requireAgencyStaff } from "@/lib/auth/guards";
 import Link from "next/link";
 import { Sparkles, LayoutDashboard, Users, Megaphone, BarChart3, FileText, UserCog, Settings, FileBarChart2, Bell, Activity } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
+import { MobileSidebarToggle } from "@/components/client/mobile-sidebar";
 
 export default async function AgencyLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAgencyStaff();
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-64 border-r border-[var(--color-border)] bg-[var(--color-bg-soft)] flex flex-col">
+    <div className="min-h-screen md:flex">
+      <MobileSidebarToggle>
         <div className="p-6 border-b border-[var(--color-border)]">
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
@@ -46,7 +47,7 @@ export default async function AgencyLayout({ children }: { children: React.React
           </div>
           <SignOutButton />
         </div>
-      </aside>
+      </MobileSidebarToggle>
 
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>

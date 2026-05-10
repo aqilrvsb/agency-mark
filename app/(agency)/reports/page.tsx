@@ -2,7 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAgencyStaff } from "@/lib/auth/guards";
 import { Card, CardTitle, CardDescription, CardHeader } from "@/components/ui/card";
 import { ReportExportButton } from "./export-button";
-import { FileBarChart2, TrendingUp, Wallet } from "lucide-react";
+import { FileBarChart2, TrendingUp, Wallet, FileText } from "lucide-react";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -100,11 +101,12 @@ export default async function ReportsPage() {
                 <th className="text-right py-3 font-bold">CTR</th>
                 <th className="text-right py-3 font-bold">Conv.</th>
                 <th className="text-right py-3 font-bold">CPA</th>
+                <th className="text-right py-3 font-bold">PDF</th>
               </tr>
             </thead>
             <tbody>
               {brandStats.length === 0 && (
-                <tr><td colSpan={8} className="py-6 text-center text-[var(--color-text-muted)]">No data for last 30 days yet.</td></tr>
+                <tr><td colSpan={9} className="py-6 text-center text-[var(--color-text-muted)]">No data for last 30 days yet.</td></tr>
               )}
               {brandStats.map((b) => {
                 const ctr = b.impressions > 0 ? (b.clicks / b.impressions) * 100 : 0;
@@ -127,6 +129,16 @@ export default async function ReportsPage() {
                     <td className="py-3 text-right font-mono">{ctr.toFixed(2)}%</td>
                     <td className="py-3 text-right font-mono">{b.conversions.toLocaleString()}</td>
                     <td className="py-3 text-right font-mono">{b.conversions > 0 ? `RM ${cpa.toFixed(2)}` : "—"}</td>
+                    <td className="py-3 text-right">
+                      <Link
+                        href={`/reports/print/${b.id}?days=30`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[var(--color-orange)] hover:underline"
+                      >
+                        <FileText className="w-3.5 h-3.5" /> PDF
+                      </Link>
+                    </td>
                   </tr>
                 );
               })}
@@ -141,10 +153,10 @@ export default async function ReportsPage() {
             <CardTitle className="flex items-center gap-2"><FileBarChart2 className="w-5 h-5" /> What's included in the export</CardTitle>
           </CardHeader>
           <ul className="space-y-2 text-sm text-[var(--color-text-secondary)] list-disc pl-5">
-            <li>Per-client per-day breakdown (last 30 days)</li>
+            <li><strong>CSV:</strong> Per-client per-day breakdown (last 30 days)</li>
+            <li><strong>PDF:</strong> One-page client-ready summary per brand — KPIs vs prior period, top 10 campaigns, budget snapshot</li>
             <li>Spend, impressions, clicks, CTR, conversions, CPA</li>
             <li>Platform breakdown (FB Ads / FB Insights / Google Ads / TikTok Ads)</li>
-            <li>Ready-to-share format — CSV opens in Excel, Sheets, or Numbers</li>
           </ul>
         </Card>
         <Card>
