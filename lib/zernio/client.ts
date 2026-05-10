@@ -108,15 +108,18 @@ export class ZernioClient {
   /**
    * Build an OAuth URL that the user is redirected to in order to connect
    * a new social account.
-   * Zernio expects: GET /connect/{platform}?profileId={profileId}
-   * The connection is associated with a Zernio Profile, which we create
-   * per brand on first connect.
+   * Zernio expects: GET /connect/{platform}?profileId={profileId}&redirectUrl={url}
+   * If redirectUrl is provided, Zernio bakes it into the state so after the
+   * user picks an account, they bounce back to that URL instead of the Zernio
+   * dashboard. Without it the user lands on zernio.com/dashboard.
    */
   async getConnectUrl(params: {
     platform: ZernioPlatform;
     profileId: string;
+    redirectUrl?: string;
   }): Promise<{ authUrl: string }> {
     const qs = new URLSearchParams({ profileId: params.profileId });
+    if (params.redirectUrl) qs.set("redirectUrl", params.redirectUrl);
     return this.request<{ authUrl: string }>(`/connect/${params.platform}?${qs.toString()}`);
   }
 

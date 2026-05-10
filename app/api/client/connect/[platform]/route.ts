@@ -19,11 +19,17 @@ const INTERNAL_PLATFORM: Record<string, string> = {
   tiktok: "tiktok_ads",
 };
 
-export async function POST(_req: Request, ctx: { params: Promise<{ platform: string }> }) {
+export async function POST(req: Request, ctx: { params: Promise<{ platform: string }> }) {
   const { platform } = await ctx.params;
   if (!INTERNAL_PLATFORM[platform]) {
     return NextResponse.json({ error: "Unsupported platform" }, { status: 400 });
   }
+
+  // Build the post-OAuth redirect target so Zernio sends users back to
+  // AdSolution instead of zernio.com/dashboard. We derive the host from
+  // the incoming request to support all environments (production + previews).
+  const origin = new URL(req.url).origin;
+  const redirectUrl = `${origin}/client/connections?ok=1&platform=${platform}`;
 
   const user = await requireClient();
   const supabase = await createClient();
@@ -81,6 +87,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ platform: str
     const { authUrl } = await zernio.getConnectUrl({
       platform: ZERNIO_PLATFORM[platform],
       profileId,
+      redirectUrl,
     });
     return NextResponse.json({ authUrl, profileId });
   } catch (e) {
