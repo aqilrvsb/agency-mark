@@ -316,14 +316,31 @@ async function TabContent({
               </div>
             );
           })}
-          {(adAccounts ?? []).length === 0 && (
-            <div className="text-sm text-[var(--color-text-muted)] py-4 text-center">
-              No ad accounts connected yet.
+          {(adAccounts ?? []).length === 0 ? (
+            <div className="rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)] p-8 text-center">
+              <Plug className="w-10 h-10 text-[var(--color-text-muted)] mx-auto mb-3" />
+              <div className="text-sm font-bold mb-1">No ad accounts connected yet</div>
+              <div className="text-xs text-[var(--color-text-muted)] mb-4 max-w-md mx-auto leading-relaxed">
+                The client connects their Facebook / TikTok account via Zernio from their portal.
+                If the client already connected, paste the external account ID below to map it.
+              </div>
+              <a
+                href="https://zernio.com/dashboard"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[var(--color-orange)] text-[#0a0a0a] hover:bg-[var(--color-orange-hover)] transition mb-3"
+              >
+                Open Zernio dashboard →
+              </a>
+              <div className="pt-2">
+                <AddAdAccountForm brandId={brandId} />
+              </div>
+            </div>
+          ) : (
+            <div className="pt-2">
+              <AddAdAccountForm brandId={brandId} />
             </div>
           )}
-          <div className="pt-2">
-            <AddAdAccountForm brandId={brandId} />
-          </div>
         </div>
       </Card>
     );

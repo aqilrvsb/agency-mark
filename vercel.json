@@ -5,6 +5,10 @@
     {
       "path": "/api/cron/sync",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/anomaly-check",
+      "schedule": "0 1 * * *"
     }
   ]
 }

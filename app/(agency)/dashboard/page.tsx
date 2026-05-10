@@ -78,24 +78,52 @@ export default async function DashboardOverviewPage() {
         </Link>
       </header>
 
-      {data.unreadAlerts > 0 && (
-        <Link
-          href="/notifications"
-          className="block rounded-2xl mb-6 border border-amber-500/30 bg-amber-500/5 p-4 hover:bg-amber-500/10 transition"
-        >
-          <div className="flex items-center gap-3">
+      {(data.unreadAlerts > 0 || data.recentAlerts.length > 0) && (
+        <div className="rounded-2xl mb-6 border border-amber-500/30 bg-amber-500/5 p-4">
+          <div className="flex items-center gap-3 mb-3">
             <AlertTriangle className="w-5 h-5 text-amber-300" />
             <div className="flex-1">
               <div className="font-bold text-amber-300">
-                {data.unreadAlerts} unread alert{data.unreadAlerts === 1 ? "" : "s"}
+                {data.unreadAlerts > 0
+                  ? `${data.unreadAlerts} unread alert${data.unreadAlerts === 1 ? "" : "s"}`
+                  : "Recent alerts"}
               </div>
               <div className="text-xs text-[var(--color-text-secondary)]">
-                Click to review KPI threshold breaches.
+                Anomalies detected by the nightly scan (1 AM UTC).
               </div>
             </div>
-            <span className="text-amber-300 text-sm font-bold">View →</span>
+            <Link href="/notifications" className="text-amber-300 text-sm font-bold whitespace-nowrap">
+              View all →
+            </Link>
           </div>
-        </Link>
+          <ul className="space-y-1">
+            {data.recentAlerts.slice(0, 3).map((a) => (
+              <li
+                key={a.id}
+                className="flex items-start justify-between gap-3 text-xs py-2 border-t border-amber-500/10 first:border-0 first:pt-0"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-[var(--color-text-primary)]">
+                    {a.brandName}
+                    <span
+                      className={`ml-2 text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-md ${
+                        a.severity === "critical"
+                          ? "bg-red-500/20 text-red-300"
+                          : "bg-amber-500/20 text-amber-300"
+                      }`}
+                    >
+                      {a.severity}
+                    </span>
+                  </div>
+                  <div className="text-[var(--color-text-secondary)] mt-0.5">{a.message}</div>
+                </div>
+                <div className="text-[10px] text-[var(--color-text-muted)] whitespace-nowrap mt-0.5 font-mono">
+                  {new Date(a.createdAt).toLocaleDateString()}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <AgencyHeroStrip tiles={heroTiles} />

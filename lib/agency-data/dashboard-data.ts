@@ -18,6 +18,15 @@ export interface BrandTile {
   spark: number[]; // last N daily spend values (oldest → newest)
 }
 
+export interface RecentAlert {
+  id: string;
+  brandName: string;
+  metric: string;
+  message: string;
+  severity: string;
+  createdAt: string;
+}
+
 export interface DashboardData {
   brands: BrandTile[];
   totals: {
@@ -33,6 +42,7 @@ export interface DashboardData {
     totalBrands: number;
   };
   unreadAlerts: number;
+  recentAlerts: RecentAlert[];
   range: { start: string; end: string; days: number };
 }
 
@@ -90,9 +100,10 @@ export async function loadDashboardData(opts: { companyId: string; days?: number
       .eq("is_active", true),
     supabase
       .from("alert_history")
-      .select("id, marketer_id")
+      .select("id, metric, message, severity, campaign_name, created_at, is_read")
       .eq("company_id", opts.companyId)
-      .eq("is_read", false),
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
 
   type AdRow = { brand_id: string; platform: string; date_start: string; data: Record<string, unknown> };
@@ -208,6 +219,17 @@ export async function loadDashboardData(opts: { companyId: string; days?: number
   const totalRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
   const priorRoasTotal = priorSpend > 0 ? priorRevenue / priorSpend : 0;
 
+  const allAlerts = alertsRes.data ?? [];
+  const unreadCount = allAlerts.filter((a) => !a.is_read).length;
+  const recentAlerts: RecentAlert[] = allAlerts.slice(0, 5).map((a) => ({
+    id: a.id as string,
+    brandName: (a.campaign_name as string) ?? "—",
+    metric: (a.metric as string) ?? "—",
+    message: (a.message as string) ?? "",
+    severity: (a.severity as string) ?? "warning",
+    createdAt: a.created_at as string,
+  }));
+
   return {
     brands: tiles,
     totals: {
@@ -222,7 +244,8 @@ export async function loadDashboardData(opts: { companyId: string; days?: number
       activeBrands: (brandsRes.data ?? []).filter((b) => b.is_active).length,
       totalBrands: (brandsRes.data ?? []).length,
     },
-    unreadAlerts: alertsRes.data?.length ?? 0,
+    unreadAlerts: unreadCount,
+    recentAlerts,
     range: { start, end: today, days },
   };
 }
