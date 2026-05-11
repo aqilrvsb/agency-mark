@@ -4,10 +4,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Edit2 } from "lucide-react";
 import { getCatalog } from "@/lib/templates/catalog";
-import { formatValue } from "@/lib/templates/format";
 import { parse, topoSortFormulas, evalFormulas, type FormulaSpec } from "@/lib/formula/engine";
 import { aggregateAdData, parseDateRange, type AggregateRow } from "@/lib/client-data/aggregate";
 import { DateRangePicker } from "@/components/client/date-range-picker";
+import { ReportTable, type ReportColumn, type ReportRow } from "@/components/marketer/report-table";
 import type { Level, Platform, CatalogField } from "@/lib/templates/catalog-types";
 
 export const dynamic = "force-dynamic";
@@ -97,7 +97,7 @@ export default async function RunReportPage({
   }
 
   // Resolve every column → label, format, accessor
-  const columns = tpl.fields.map((token) => {
+  const columns: ReportColumn[] = tpl.fields.map((token) => {
     if (token.source === "field") {
       const f = fieldById.get(token.id);
       if (!f) return null;
@@ -107,7 +107,7 @@ export default async function RunReportPage({
         format: f.format,
         path: f.path,
         align: (f.format === "currency" || f.format === "number" || f.format === "percent" || f.format === "ratio") ? "right" : "left",
-      };
+      } as ReportColumn;
     }
     const fm = tpl.formulas.find((x) => x.id === token.id);
     if (!fm) return null;
@@ -117,13 +117,34 @@ export default async function RunReportPage({
       format: fm.format,
       path: fm.id,
       align: "right",
-    };
-  }).filter((x): x is NonNullable<typeof x> => x !== null);
+    } as ReportColumn;
+  }).filter((x): x is ReportColumn => x !== null);
 
-  // Build rows: map aggregate → field values, then evaluate formulas
-  const renderedRows = aggregated.map((agg) => {
-    const row = aggregateToRow(agg);
-    return evalFormulas(compiledFormulas, row);
+  // Build rows: map aggregate → field values, then evaluate formulas.
+  // For Ad-level reports, also bundle the creative metadata so the client
+  // table can open the lightbox modal on row click.
+  const renderedRows: ReportRow[] = aggregated.map((agg) => {
+    const values = evalFormulas(compiledFormulas, aggregateToRow(agg));
+    if (tpl.level !== "ad") return { values };
+    return {
+      values,
+      media: {
+        name: agg.name,
+        status: agg.status,
+        campaignName: agg.campaignName,
+        adsetName: agg.adsetName,
+        creativeBody: agg.creativeBody,
+        creativeThumbnail: agg.creativeThumbnail,
+        creativeImageUrl: agg.creativeImageUrl,
+        creativeVideoUrl: agg.creativeVideoUrl,
+        creativeVideoId: agg.creativeVideoId,
+        spend: agg.spend,
+        impressions: agg.impressions,
+        clicks: agg.clicks,
+        ctr: agg.ctr,
+        roas: agg.roas,
+      },
+    };
   });
 
   return (
@@ -152,74 +173,7 @@ export default async function RunReportPage({
           </div>
         </header>
 
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-max">
-              <thead>
-                <tr className="border-b border-[var(--color-border)] bg-white/[0.02]">
-                  {columns.map((c) => (
-                    <th
-                      key={c.id}
-                      className={`text-[10px] font-semibold tracking-[0.06em] text-[var(--color-text-muted)] uppercase px-4 py-3 ${
-                        c.align === "right" ? "text-right" : "text-left"
-                      }`}
-                    >
-                      {c.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
-                {renderedRows.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="px-4 py-12 text-center text-sm text-[var(--color-text-muted)]"
-                    >
-                      No data in this date range. Try expanding the window or connect more ad accounts.
-                    </td>
-                  </tr>
-                ) : (
-                  renderedRows.map((row, i) => (
-                    <tr key={i} className="transition-colors hover:bg-white/[0.02]">
-                      {columns.map((c) => {
-                        const v: unknown = row[c.path];
-                        const isThumb = c.format === "thumbnail";
-                        const isText = c.format === "text";
-                        return (
-                          <td
-                            key={c.id}
-                            className={`px-4 py-3 text-[13px] text-[var(--color-text-secondary)] ${
-                              c.align === "right" ? "text-right tabular-nums" : "text-left"
-                            }`}
-                          >
-                            {isThumb ? (
-                              typeof v === "string" && v.startsWith("http") ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={v}
-                                  alt=""
-                                  loading="lazy"
-                                  className="w-12 h-9 object-cover rounded bg-[var(--color-bg-soft)]"
-                                />
-                              ) : (
-                                <div className="w-12 h-9 rounded bg-[var(--color-bg-soft)]" />
-                              )
-                            ) : isText ? (
-                              <span className="text-[var(--color-text-primary)] truncate">{String(v ?? "—")}</span>
-                            ) : (
-                              formatValue(v, c.format)
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <ReportTable columns={columns} rows={renderedRows} />
       </div>
     </div>
   );
