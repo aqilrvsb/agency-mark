@@ -9,7 +9,7 @@
  * "Add conversion event" picker because they vary per pixel/account.
  *
  * `path` values reference keys we sync into `ad_data.data` JSONB. Some
- * are not yet synced — those fields display "—" until lib/zernio/sync.ts
+ * are not yet synced — those fields display "—" until lib/peningads/sync.ts
  * adds them. Sync gap-closure is a separate follow-up commit.
  */
 

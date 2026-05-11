@@ -20,7 +20,7 @@ export function ConnectButton({ platform, connected }: { platform: string; conne
         setLoading(false);
         return;
       }
-      // Redirect the browser to Zernio's OAuth URL
+      // Redirect the browser to Peningads' OAuth URL
       window.location.href = body.authUrl;
     } catch (e) {
       alert(e instanceof Error ? e.message : "Failed to start connection");

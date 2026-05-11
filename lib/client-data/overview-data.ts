@@ -115,7 +115,7 @@ export async function loadOverviewData(opts: {
   const priorStart = isoMinusDays(priorEnd, days - 1);
 
   // Lazy-backfill: if we don't have ad_data covering the requested window
-  // (or the cache is stale), pull from Zernio inline before reading. Fully
+  // (or the cache is stale), pull from Peningads inline before reading. Fully
   // best-effort — never throws.
   await ensureFreshAdData({ brandId, fromDate: start, toDate: end });
 

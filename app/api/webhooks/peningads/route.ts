@@ -1,24 +1,28 @@
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { syncBrandWindow } from "@/lib/zernio/sync";
+import { syncBrandWindow } from "@/lib/peningads/sync";
 
 /**
- * Zernio webhook receiver.
+ * Peningads webhook receiver.
  *
- * Configured via Zernio dashboard (Webhooks) or POST /v1/webhooks. Subscribe
- * to at minimum these events:
+ * Configured via the data provider's dashboard (Webhooks) or POST /v1/webhooks.
+ * Subscribe to at minimum these events:
  *
  *   - account.connected                   (Page or Ad SocialAccount created)
  *   - account.disconnected                (token revoked / account removed)
- *   - account.ads.initial_sync_completed  (Zernio's 90-day discovery backfill done)
+ *   - account.ads.initial_sync_completed  (90-day discovery backfill done)
  *
- * Signed with HMAC-SHA256 over the raw body using ZERNIO_WEBHOOK_SECRET, sent
- * in the X-Zernio-Signature header. We verify before doing any work.
+ * Signed with HMAC-SHA256 over the raw body using PENINGADS_WEBHOOK_SECRET,
+ * sent in the X-Peningads-Signature header. We verify before doing any work.
  */
 export async function POST(req: Request) {
-  const secret = process.env.ZERNIO_WEBHOOK_SECRET;
-  const signature = req.headers.get("x-zernio-signature") ?? "";
+  const secret =
+    process.env.PENINGADS_WEBHOOK_SECRET ?? process.env.ZERNIO_WEBHOOK_SECRET;
+  const signature =
+    req.headers.get("x-peningads-signature") ??
+    req.headers.get("x-zernio-signature") ??
+    "";
   const raw = await req.text();
 
   if (secret) {
@@ -48,7 +52,7 @@ export async function POST(req: Request) {
       await handleAccountStateChange(event, admin);
       break;
     case "webhook.test":
-      // Zernio's test ping
+      // The data provider's test ping
       break;
     default:
       // Ignore other events
@@ -87,11 +91,11 @@ async function handleAdsInitialSyncCompleted(
 ) {
   if (!event.account || !event.sync) return;
 
-  // Find the brand by zernio_profile_id
+  // Find the brand by peningads_profile_id
   const { data: brand } = await admin
     .from("brands")
     .select("id")
-    .eq("zernio_profile_id", event.account.profileId)
+    .eq("peningads_profile_id", event.account.profileId)
     .maybeSingle();
   if (!brand) return;
 
@@ -105,7 +109,7 @@ async function handleAdsInitialSyncCompleted(
     .eq("social_account_id", event.account.accountId);
 
   // Trigger our internal sync to pull the freshly-discovered ads into ad_data.
-  // 90 days matches Zernio's default discovery window.
+  // 90 days matches the data provider's default discovery window.
   if (event.sync.status === "success" && (event.sync.synced ?? 0) > 0) {
     const today = new Date().toISOString().slice(0, 10);
     const start = new Date();
@@ -127,7 +131,7 @@ async function handleAccountStateChange(
   const { data: brand } = await admin
     .from("brands")
     .select("id")
-    .eq("zernio_profile_id", event.account.profileId)
+    .eq("peningads_profile_id", event.account.profileId)
     .maybeSingle();
   if (!brand) return;
 
@@ -139,7 +143,7 @@ async function handleAccountStateChange(
     .eq("external_account_id", event.account.accountId);
 }
 
-// Zernio sometimes sends GET pings to verify the endpoint exists
+// Peningads sometimes sends GET pings to verify the endpoint exists
 export async function GET() {
-  return NextResponse.json({ ok: true, service: "zernio-webhook" });
+  return NextResponse.json({ ok: true, service: "peningads-webhook" });
 }

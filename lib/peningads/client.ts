@@ -1,5 +1,5 @@
-// Zernio REST API client.
-// Docs: https://docs.zernio.com — auth via Bearer token from ZERNIO_API_KEY.
+// Peningads REST API client.
+// Docs: https://docs.peningads — auth via Bearer token from PENINGADS_API_KEY.
 //
 // Data model (the truth, confirmed by openapi.yaml + live probes):
 //
@@ -24,12 +24,12 @@
 //   facebook | instagram | tiktok | linkedin | twitter | pinterest | youtube
 // Google Ads is NOT in the connect list — must be set up out-of-band.
 
-export type ZernioPlatform = "facebook" | "instagram" | "tiktok" | "linkedin" | "twitter" | "pinterest" | "youtube";
-export type ZernioAdsPlatform = "facebook" | "instagram" | "tiktok" | "linkedin" | "pinterest" | "google" | "twitter";
+export type PeningadsPlatform = "facebook" | "instagram" | "tiktok" | "linkedin" | "twitter" | "pinterest" | "youtube";
+export type PeningadsAdsPlatform = "facebook" | "instagram" | "tiktok" | "linkedin" | "pinterest" | "google" | "twitter";
 
-export interface ZernioSocialAccount {
+export interface PeningadsSocialAccount {
   _id: string;
-  platform: ZernioPlatform;
+  platform: PeningadsPlatform;
   username?: string;
   displayName?: string;
   isActive?: boolean;
@@ -45,7 +45,7 @@ export interface ZernioSocialAccount {
   createdAt?: string;
 }
 
-export interface ZernioPlatformAdAccount {
+export interface PeningadsPlatformAdAccount {
   id: string; // act_123 / advertiser_id / customer_id
   name: string;
   currency?: string;
@@ -57,11 +57,11 @@ export interface ZernioPlatformAdAccount {
 }
 
 /**
- * Metrics returned per Ad over a date range. Field names follow Zernio's
+ * Metrics returned per Ad over a date range. Field names follow Peningads'
  * AdMetrics schema; not every field is set on every platform / response.
  * Always treat numeric fields as `number | undefined`.
  */
-export interface ZernioAdMetrics {
+export interface PeningadsAdMetrics {
   spend?: number;
   impressions?: number;
   reach?: number;
@@ -82,12 +82,12 @@ export interface ZernioAdMetrics {
   [k: string]: unknown;
 }
 
-export interface ZernioAd {
-  _id: string; // Zernio internal ID (Mongo ObjectId) — actual field name on the wire
+export interface PeningadsAd {
+  _id: string; // Peningads internal ID (Mongo ObjectId) — actual field name on the wire
   id?: string; // Some endpoints alias as `id`; treat as optional
   platformAdId?: string;
   name?: string;
-  platform: ZernioAdsPlatform;
+  platform: PeningadsAdsPlatform;
   adAccountId?: string;
   campaignId?: string;
   adSetId?: string;
@@ -96,51 +96,59 @@ export interface ZernioAd {
   status?: string;
   effectiveStatus?: string;
   isExternal?: boolean;
-  metrics?: ZernioAdMetrics;
+  metrics?: PeningadsAdMetrics;
   createdAt?: string;
   updatedAt?: string;
   [k: string]: unknown;
 }
 
-export interface ZernioAdCampaign {
+export interface PeningadsAdCampaign {
   id?: string;
   platformCampaignId: string;
   name?: string;
-  platform: ZernioAdsPlatform;
+  platform: PeningadsAdsPlatform;
   adAccountId?: string;
   status?: string;
-  metrics?: ZernioAdMetrics;
+  metrics?: PeningadsAdMetrics;
   adCount?: number;
   [k: string]: unknown;
 }
 
-export interface ZernioAdAnalyticsResponse {
+export interface PeningadsAdAnalyticsResponse {
   ad: { id: string; name?: string; platform: string; status?: string };
   analytics: {
-    summary: ZernioAdMetrics;
-    daily: Array<ZernioAdMetrics & { date: string }>;
+    summary: PeningadsAdMetrics;
+    daily: Array<PeningadsAdMetrics & { date: string }>;
     breakdowns?: Record<string, unknown[]>;
   };
 }
 
-export interface ZernioPagination {
+export interface PeningadsPagination {
   page: number;
   limit: number;
   total: number;
   pages: number;
 }
 
-export class ZernioClient {
+export class PeningadsClient {
   private apiKey: string;
   private baseUrl: string;
 
   constructor(apiKey?: string, baseUrl?: string) {
-    this.apiKey = apiKey ?? process.env.ZERNIO_API_KEY ?? "";
-    if (!this.apiKey) throw new Error("ZERNIO_API_KEY env var is not set");
-    // Zernio's REST API lives at zernio.com/api/v1. We saw 405s when the env
-    // var was accidentally set to https://api.zernio.com (no /api/v1), so
-    // normalize known-bad values to the canonical host.
-    const raw = baseUrl ?? process.env.ZERNIO_API_BASE_URL ?? "https://zernio.com/api/v1";
+    // Read PENINGADS_API_KEY first; fall back to legacy ZERNIO_API_KEY so a
+    // Vercel deploy that hasn't rotated env vars yet still boots cleanly.
+    this.apiKey =
+      apiKey ?? process.env.PENINGADS_API_KEY ?? process.env.ZERNIO_API_KEY ?? "";
+    if (!this.apiKey) throw new Error("PENINGADS_API_KEY env var is not set");
+    // Data provider's REST API lives at zernio.com/api/v1 (the underlying
+    // upstream host — only referenced here as the env-default fallback).
+    // We saw 405s when the env var was accidentally set to a host without
+    // /api/v1, so normalize known-bad values to the canonical host.
+    const raw =
+      baseUrl ??
+      process.env.PENINGADS_API_BASE_URL ??
+      process.env.ZERNIO_API_BASE_URL ??
+      "https://zernio.com/api/v1";
     const normalized = raw.replace(/\/$/, "");
     this.baseUrl =
       normalized === "https://api.zernio.com" || normalized === "https://zernio.com"
@@ -160,7 +168,7 @@ export class ZernioClient {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      throw new Error(`Zernio ${path} ${res.status}: ${body}`);
+      throw new Error(`Peningads ${path} ${res.status}: ${body}`);
     }
     return res.json() as Promise<T>;
   }
@@ -169,19 +177,19 @@ export class ZernioClient {
   // Social accounts (Pages / Profiles)
   // ─────────────────────────────────────────────────────────
 
-  async listSocialAccounts(opts?: { profileId?: string }): Promise<ZernioSocialAccount[]> {
+  async listSocialAccounts(opts?: { profileId?: string }): Promise<PeningadsSocialAccount[]> {
     const qs = opts?.profileId ? `?profileId=${encodeURIComponent(opts.profileId)}` : "";
-    const res = await this.request<{ accounts: ZernioSocialAccount[] } | ZernioSocialAccount[]>(`/accounts${qs}`);
+    const res = await this.request<{ accounts: PeningadsSocialAccount[] } | PeningadsSocialAccount[]>(`/accounts${qs}`);
     return Array.isArray(res) ? res : res.accounts;
   }
 
   /** Back-compat alias used by sync-connections.ts */
-  async listAccounts(opts?: { profileId?: string }): Promise<ZernioSocialAccount[]> {
+  async listAccounts(opts?: { profileId?: string }): Promise<PeningadsSocialAccount[]> {
     return this.listSocialAccounts(opts);
   }
 
-  async getSocialAccount(accountId: string): Promise<ZernioSocialAccount> {
-    return this.request<ZernioSocialAccount>(`/accounts/${accountId}`);
+  async getSocialAccount(accountId: string): Promise<PeningadsSocialAccount> {
+    return this.request<PeningadsSocialAccount>(`/accounts/${accountId}`);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -192,10 +200,10 @@ export class ZernioClient {
    * GET /v1/ads/accounts?accountId=<socialAccountId>
    * Returns the platform Ad Accounts available for the given Social Account
    * (e.g. Meta ad accounts act_123 / TikTok advertiser IDs / Google Ads
-   * customer IDs). Cached 1h server-side by Zernio.
+   * customer IDs). Cached 1h server-side by the data provider.
    */
-  async listAdAccounts(socialAccountId: string): Promise<ZernioPlatformAdAccount[]> {
-    const res = await this.request<{ accounts: ZernioPlatformAdAccount[] }>(
+  async listAdAccounts(socialAccountId: string): Promise<PeningadsPlatformAdAccount[]> {
+    const res = await this.request<{ accounts: PeningadsPlatformAdAccount[] }>(
       `/ads/accounts?accountId=${encodeURIComponent(socialAccountId)}`
     );
     return res.accounts ?? [];
@@ -212,15 +220,15 @@ export class ZernioClient {
    */
   async listAds(opts: {
     adAccountId: string;
-    platform: ZernioAdsPlatform;
+    platform: PeningadsAdsPlatform;
     fromDate: string; // YYYY-MM-DD
     toDate: string;   // YYYY-MM-DD
     campaignId?: string;
     status?: string;
     limit?: number;
     page?: number;
-    source?: "all" | "zernio";
-  }): Promise<{ ads: ZernioAd[]; pagination: ZernioPagination }> {
+    source?: "all" | "peningads";
+  }): Promise<{ ads: PeningadsAd[]; pagination: PeningadsPagination }> {
     const qs = new URLSearchParams({
       adAccountId: opts.adAccountId,
       platform: opts.platform,
@@ -232,7 +240,7 @@ export class ZernioClient {
     });
     if (opts.campaignId) qs.set("campaignId", opts.campaignId);
     if (opts.status) qs.set("status", opts.status);
-    return this.request<{ ads: ZernioAd[]; pagination: ZernioPagination }>(`/ads?${qs.toString()}`);
+    return this.request<{ ads: PeningadsAd[]; pagination: PeningadsPagination }>(`/ads?${qs.toString()}`);
   }
 
   /**
@@ -243,12 +251,12 @@ export class ZernioClient {
    */
   async listAdCampaigns(opts: {
     adAccountId: string;
-    platform: ZernioAdsPlatform;
+    platform: PeningadsAdsPlatform;
     status?: string;
     limit?: number;
     page?: number;
-    source?: "all" | "zernio";
-  }): Promise<{ campaigns: ZernioAdCampaign[]; pagination: ZernioPagination }> {
+    source?: "all" | "peningads";
+  }): Promise<{ campaigns: PeningadsAdCampaign[]; pagination: PeningadsPagination }> {
     const qs = new URLSearchParams({
       adAccountId: opts.adAccountId,
       platform: opts.platform,
@@ -257,7 +265,7 @@ export class ZernioClient {
       source: opts.source ?? "all",
     });
     if (opts.status) qs.set("status", opts.status);
-    return this.request<{ campaigns: ZernioAdCampaign[]; pagination: ZernioPagination }>(
+    return this.request<{ campaigns: PeningadsAdCampaign[]; pagination: PeningadsPagination }>(
       `/ads/campaigns?${qs.toString()}`
     );
   }
@@ -271,7 +279,7 @@ export class ZernioClient {
     fromDate: string;
     toDate: string;
     breakdowns?: string[];
-  }): Promise<ZernioAdAnalyticsResponse> {
+  }): Promise<PeningadsAdAnalyticsResponse> {
     const qs = new URLSearchParams({
       fromDate: opts.fromDate,
       toDate: opts.toDate,
@@ -279,7 +287,7 @@ export class ZernioClient {
     if (opts.breakdowns && opts.breakdowns.length > 0) {
       qs.set("breakdowns", opts.breakdowns.join(","));
     }
-    return this.request<ZernioAdAnalyticsResponse>(`/ads/${encodeURIComponent(adId)}/analytics?${qs.toString()}`);
+    return this.request<PeningadsAdAnalyticsResponse>(`/ads/${encodeURIComponent(adId)}/analytics?${qs.toString()}`);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -288,21 +296,21 @@ export class ZernioClient {
 
   /**
    * Build an OAuth URL the user is redirected to in order to connect a new
-   * social account. Zernio expects:
+   * social account. Peningads expects:
    *   GET /connect/{platform}?profileId={profileId}&redirect_url={url}
    *
    * NOTE: this endpoint connects the POSTING / organic side (Page, Profile).
    * It does NOT grant ads access. For ad data, call getAdsConnectUrl below.
    */
   async getConnectUrl(params: {
-    platform: ZernioPlatform;
+    platform: PeningadsPlatform;
     profileId: string;
     redirectUrl?: string;
   }): Promise<{ authUrl: string }> {
     const qs = new URLSearchParams({ profileId: params.profileId });
     if (params.redirectUrl) {
       qs.set("redirect_url", params.redirectUrl);
-      qs.set("redirectUrl", params.redirectUrl); // belt-and-braces; Zernio has accepted both
+      qs.set("redirectUrl", params.redirectUrl); // belt-and-braces; the data provider has accepted both
     }
     return this.request<{ authUrl: string }>(`/connect/${params.platform}?${qs.toString()}`);
   }
@@ -311,7 +319,7 @@ export class ZernioClient {
    * Connect ADS for a platform — the actual endpoint that grants ad-data access.
    *   GET /v1/connect/{platform}/ads
    *
-   * Per Zernio's spec:
+   * Per the data provider's spec:
    *  - Same-token platforms (facebook, instagram, linkedin, pinterest) copy the
    *    OAuth token from the existing organic SocialAccount and create an ads
    *    SocialAccount with values metaads / linkedinads / pinterestads. If the
@@ -351,8 +359,8 @@ export class ZernioClient {
   }
 
   /**
-   * Create a Zernio Profile (workspace-like grouping for connected accounts).
-   * Zernio's actual response shape is:
+   * Create a Peningads Profile (workspace-like grouping for connected accounts).
+   * The data provider's actual response shape is:
    *   { message: "...", profile: { _id, name, ... } }
    * so we unwrap.
    */
@@ -379,7 +387,7 @@ export class ZernioClient {
 
   /**
    * Find an existing profile whose description matches `<emailTag>` so we
-   * reuse the same Zernio profile across re-registrations of the same
+   * reuse the same Peningads profile across re-registrations of the same
    * email. Returns null if not found.
    */
   async findProfileByEmail(email: string): Promise<{ _id: string; name: string } | null> {
@@ -390,17 +398,17 @@ export class ZernioClient {
   }
 }
 
-/** Stable tag we embed in the Zernio profile description for lookup. */
+/** Stable tag we embed in the Peningads profile description for lookup. */
 function emailTag(email: string): string {
   return `[fighter:${email.toLowerCase().trim()}]`;
 }
 export { emailTag };
 
-let _zernio: ZernioClient | null = null;
-export function getZernio(): ZernioClient {
-  if (_zernio) return _zernio;
-  _zernio = new ZernioClient();
-  return _zernio;
+let _peningads: PeningadsClient | null = null;
+export function getPeningads(): PeningadsClient {
+  if (_peningads) return _peningads;
+  _peningads = new PeningadsClient();
+  return _peningads;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -409,9 +417,9 @@ export function getZernio(): ZernioClient {
 
 /**
  * Map our internal platform value (meta_ads / tiktok_ads / google_ads) to
- * the Zernio Ads API platform string.
+ * the Peningads Ads API platform string.
  */
-export function toZernioAdsPlatform(internal: string): ZernioAdsPlatform | null {
+export function toPeningadsAdsPlatform(internal: string): PeningadsAdsPlatform | null {
   switch (internal) {
     case "meta_ads":
     case "meta":

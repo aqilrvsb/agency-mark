@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { consumePendingState } from "@/lib/zernio/oauth-state";
+import { consumePendingState } from "@/lib/peningads/oauth-state";
 
 /**
- * Zernio redirects users back here after they authorize a Meta/Google/TikTok
+ * Peningads redirects users back here after they authorize a Meta/Google/TikTok
  * ad account. Expected query params:
  *   - state         : the token we issued in /api/client/connect/[platform]
- *   - account_id    : Zernio's identifier for the connected social account
+ *   - account_id    : the data provider's identifier for the connected social account
  *   - account_name  : (optional) display label
  *   - error         : present if auth failed
  *
- * Note: actual param names depend on Zernio's redirect contract. We accept
- * common variants below.
+ * Note: actual param names depend on the data provider's redirect contract.
+ * We accept common variants below.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
   }
 
   if (!accountId) {
-    return redirect({ error: "No account ID returned from Zernio" });
+    return redirect({ error: "No account ID returned from Peningads" });
   }
 
   // Persist the connection

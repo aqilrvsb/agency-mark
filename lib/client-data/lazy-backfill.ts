@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { syncBrandWindow } from "@/lib/zernio/sync";
+import { syncBrandWindow } from "@/lib/peningads/sync";
 
 const SYNC_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
@@ -8,7 +8,7 @@ const SYNC_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
  *
  * On every render:
  *   1. If the brand has connected ad accounts AND we don't have ad_data
- *      rows covering the requested window, fetch from Zernio inline.
+ *      rows covering the requested window, fetch from Peningads inline.
  *   2. Otherwise check the most recent sync log for this brand — if it
  *      ran in the last 6h we trust the cache; if older AND the requested
  *      window includes today/yesterday, run a quick forward-sync.

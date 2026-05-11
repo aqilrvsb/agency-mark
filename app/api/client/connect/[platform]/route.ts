@@ -2,34 +2,34 @@ import { NextResponse } from "next/server";
 import { requireClient } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getZernio, emailTag } from "@/lib/zernio/client";
-import { syncBrandConnections } from "@/lib/zernio/sync-connections";
+import { getPeningads, emailTag } from "@/lib/peningads/client";
+import { syncBrandConnections } from "@/lib/peningads/sync-connections";
 
 /**
- * Get the brand's Zernio profile id, with three layers of recovery so we
- * stay self-healing when the user externally edits Zernio:
- *   1. brands.zernio_profile_id is set AND the profile still exists in
- *      Zernio (validated by listProfiles) → use it
- *   2. brands.zernio_profile_id is null OR points to a deleted profile,
- *      but Zernio has a profile whose description carries the email tag
+ * Get the brand's Peningads profile id, with three layers of recovery so we
+ * stay self-healing when the user externally edits Peningads:
+ *   1. brands.peningads_profile_id is set AND the profile still exists in
+ *      Peningads (validated by listProfiles) → use it
+ *   2. brands.peningads_profile_id is null OR points to a deleted profile,
+ *      but Peningads has a profile whose description carries the email tag
  *      → reuse that one (heals "I deleted, then re-registered" cases)
- *   3. Neither — create a fresh Zernio profile and persist its id
+ *   3. Neither — create a fresh Peningads profile and persist its id
  */
-async function getOrCreateZernioProfileId(args: {
+async function getOrCreatePeningadsProfileId(args: {
   brandId: string;
   brandName: string;
   storedProfileId: string | null;
   email: string;
 }): Promise<string> {
   const { brandId, brandName, storedProfileId, email } = args;
-  const zernio = getZernio();
+  const peningads = getPeningads();
   const admin = createAdminClient();
 
   // Always list once — we use this for validation + email-tag fallback.
-  const { profiles } = await zernio.listProfiles();
+  const { profiles } = await peningads.listProfiles();
   const valid = (id: string) => profiles.some((p) => p._id === id);
 
-  // (1) stored id still valid in Zernio
+  // (1) stored id still valid in Peningads
   if (storedProfileId && valid(storedProfileId)) return storedProfileId;
 
   // (2) recover by email tag in description
@@ -37,27 +37,27 @@ async function getOrCreateZernioProfileId(args: {
   const byEmail = profiles.find((p) => (p.description ?? "").includes(tag));
   if (byEmail) {
     if (storedProfileId !== byEmail._id) {
-      await admin.from("brands").update({ zernio_profile_id: byEmail._id }).eq("id", brandId);
+      await admin.from("brands").update({ peningads_profile_id: byEmail._id }).eq("id", brandId);
     }
     return byEmail._id;
   }
 
   // (3) create fresh
-  const created = await zernio.createProfile({
+  const created = await peningads.createProfile({
     name: `${brandName} (AdSolution)`,
     description: `${tag} Auto-created for AdSolution brand ${brandId}`,
   });
-  await admin.from("brands").update({ zernio_profile_id: created._id }).eq("id", brandId);
+  await admin.from("brands").update({ peningads_profile_id: created._id }).eq("id", brandId);
   return created._id;
 }
 
-// URL platform slug → Zernio /connect/{platform}/ads value
+// URL platform slug → Peningads /connect/{platform}/ads value
 // Same-token platforms (facebook, instagram, linkedin, pinterest) re-use the
 // parent posting account's OAuth token; if the user already connected the Page
 // with broad enough scope, this resolves to alreadyConnected with NO new OAuth.
 // Separate-token (tiktok, twitter) and standalone (googleads) always return an
 // authUrl for the platform-specific marketing-API OAuth.
-const ZERNIO_ADS_SLUG: Record<string, "facebook" | "instagram" | "linkedin" | "tiktok" | "twitter" | "pinterest" | "googleads"> = {
+const PENINGADS_ADS_SLUG: Record<string, "facebook" | "instagram" | "linkedin" | "tiktok" | "twitter" | "pinterest" | "googleads"> = {
   facebook: "facebook",
   tiktok: "tiktok",
   google: "googleads",
@@ -72,7 +72,7 @@ const INTERNAL_PLATFORM: Record<string, string> = {
 
 export async function POST(req: Request, ctx: { params: Promise<{ platform: string }> }) {
   const { platform } = await ctx.params;
-  const adsSlug = ZERNIO_ADS_SLUG[platform];
+  const adsSlug = PENINGADS_ADS_SLUG[platform];
   if (!adsSlug || !INTERNAL_PLATFORM[platform]) {
     return NextResponse.json({ error: "Unsupported platform" }, { status: 400 });
   }
@@ -86,28 +86,28 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
   // Find the brand assigned to this client
   const { data: brand } = await supabase
     .from("brands")
-    .select("id, company_id, name, zernio_profile_id")
+    .select("id, company_id, name, peningads_profile_id")
     .eq("assigned_client_user_id", user.id)
     .maybeSingle();
   if (!brand) {
     return NextResponse.json({ error: "No brand assigned to this account" }, { status: 400 });
   }
 
-  const zernio = getZernio();
+  const peningads = getPeningads();
 
-  // Resolve a valid Zernio profile id (self-healing — recreates if the
-  // profile was deleted externally on the Zernio dashboard).
+  // Resolve a valid Peningads profile id (self-healing — recreates if the
+  // profile was deleted externally on the Peningads dashboard).
   let profileId: string;
   try {
-    profileId = await getOrCreateZernioProfileId({
+    profileId = await getOrCreatePeningadsProfileId({
       brandId: brand.id as string,
       brandName: brand.name as string,
-      storedProfileId: (brand.zernio_profile_id as string | null) ?? null,
+      storedProfileId: (brand.peningads_profile_id as string | null) ?? null,
       email: user.email,
     });
   } catch (e) {
     return NextResponse.json({
-      error: e instanceof Error ? e.message : "Failed to create/find Zernio profile",
+      error: e instanceof Error ? e.message : "Failed to create/find Peningads profile",
     }, { status: 500 });
   }
 
@@ -115,7 +115,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
   // that grants ad-data access — the regular /v1/connect/{platform} only
   // connects the Page/Profile and ads queries return empty.
   try {
-    const result = await zernio.getAdsConnectUrl({
+    const result = await peningads.getAdsConnectUrl({
       platform: adsSlug,
       profileId,
       redirectUrl,
@@ -147,22 +147,22 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
       return NextResponse.json({ authUrl: result.authUrl, profileId });
     }
 
-    return NextResponse.json({ error: "Unexpected Zernio response" }, { status: 500 });
+    return NextResponse.json({ error: "Unexpected Peningads response" }, { status: 500 });
   } catch (e) {
-    // Free-tier same-token recovery: when Zernio's account cap blocks
+    // Free-tier same-token recovery: when Peningads' account cap blocks
     // creating a separate metaads SocialAccount, the existing organic
     // facebook/instagram account in the brand's profile already carries
     // adsStatus="connected" with full ads scopes. Skip the connect call
     // and reconcile directly against listAccounts — sync-connections.ts
     // recognises same-token accounts.
-    const msg = e instanceof Error ? e.message : "Zernio connect failed";
+    const msg = e instanceof Error ? e.message : "Peningads connect failed";
     const looksLikePaywall =
       msg.includes("402") ||
       msg.toUpperCase().includes("PAYMENT_REQUIRED") ||
       msg.toLowerCase().includes("payment method");
     if (looksLikePaywall && (platform === "facebook")) {
       try {
-        const accounts = await zernio.listAccounts({ profileId });
+        const accounts = await peningads.listAccounts({ profileId });
         const sameToken = accounts.find(
           (a) => (a.platform === "facebook" || a.platform === "instagram") &&
                  a.adsStatus === "connected"

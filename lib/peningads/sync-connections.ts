@@ -1,22 +1,22 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getZernio } from "./client";
+import { getPeningads } from "./client";
 
 /**
- * Map a Zernio SocialAccount.platform value to our internal platform code.
+ * Map a Peningads SocialAccount.platform value to our internal platform code.
  *
- * After /v1/connect/{platform}/ads, Zernio normally creates a dedicated ads
+ * After /v1/connect/{platform}/ads, Peningads normally creates a dedicated ads
  * SocialAccount with platform values: metaads / tiktokads / googleads /
  * linkedinads / pinterestads / xads. We register those.
  *
  * Same-token edge case (Meta on free tier): when /v1/connect/facebook/ads
- * returns alreadyConnected:true and Zernio's account cap blocks creating
- * a separate `metaads` row, the organic `facebook` account ends up
+ * returns alreadyConnected:true and the data provider's account cap blocks
+ * creating a separate `metaads` row, the organic `facebook` account ends up
  * carrying `adsStatus: "connected"` with the full ads_management /
  * ads_read scopes. listAdAccounts(<facebook _id>) returns the Meta ad
  * accounts just fine — so we register that organic account as meta_ads
  * for sync purposes. Same idea would apply to instagram if/when we wire it.
  */
-const ZERNIO_TO_INTERNAL: Record<string, string> = {
+const PENINGADS_TO_INTERNAL: Record<string, string> = {
   metaads: "meta_ads",
   tiktokads: "tiktok_ads",
   googleads: "google_ads",
@@ -33,14 +33,14 @@ export async function syncBrandConnections(brandId: string): Promise<{ synced: n
   const admin = createAdminClient();
   const { data: brand } = await admin
     .from("brands")
-    .select("id, company_id, zernio_profile_id")
+    .select("id, company_id, peningads_profile_id")
     .eq("id", brandId)
     .maybeSingle();
 
-  if (!brand?.zernio_profile_id) return { synced: 0, skipped: 0 };
+  if (!brand?.peningads_profile_id) return { synced: 0, skipped: 0 };
 
-  const zernio = getZernio();
-  const accounts = await zernio.listAccounts({ profileId: brand.zernio_profile_id as string });
+  const peningads = getPeningads();
+  const accounts = await peningads.listAccounts({ profileId: brand.peningads_profile_id as string });
 
   // Dedup pass 1: find every parent SocialAccount that already has a dedicated
   // ads-side child (metaads/tiktokads/googleads). When such a child exists, the
@@ -48,7 +48,7 @@ export async function syncBrandConnections(brandId: string): Promise<{ synced: n
   // gets ONE row per logical Page in brand_ad_accounts.
   const adsParents = new Set<string>();
   for (const acc of accounts) {
-    if (ZERNIO_TO_INTERNAL[acc.platform as string]) {
+    if (PENINGADS_TO_INTERNAL[acc.platform as string]) {
       const parent = (acc as { parentAccountId?: string }).parentAccountId;
       if (parent) adsParents.add(parent);
     }
@@ -56,14 +56,14 @@ export async function syncBrandConnections(brandId: string): Promise<{ synced: n
 
   // Track the SocialAccount ids we end up registering, so we can deactivate
   // any rows in brand_ad_accounts that point to accounts that are no longer
-  // active in Zernio (cleans up the stale facebook same-token row when a
+  // active in Peningads (cleans up the stale facebook same-token row when a
   // metaads gets added later).
   const registeredIds = new Set<string>();
 
   let synced = 0;
   let skipped = 0;
   for (const acc of accounts) {
-    let platform = ZERNIO_TO_INTERNAL[acc.platform as string];
+    let platform = PENINGADS_TO_INTERNAL[acc.platform as string];
     if (!platform && acc.adsStatus === "connected") {
       // Skip the same-token fallback if a dedicated ads child already covers
       // this parent — avoids the "two cards for the same Page" duplicate.

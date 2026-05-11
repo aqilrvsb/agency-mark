@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/guards";
-import { syncAgency } from "@/lib/zernio/sync";
+import { syncAgency } from "@/lib/peningads/sync";
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();

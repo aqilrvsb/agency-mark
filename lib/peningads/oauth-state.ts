@@ -1,4 +1,4 @@
-// In-memory OAuth state store for Zernio connect flow.
+// In-memory OAuth state store for Peningads connect flow.
 // Single-region (sin1) Vercel deployment shares module state per lambda
 // instance. For multi-instance robustness, move to a Supabase table.
 

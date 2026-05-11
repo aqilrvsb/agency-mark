@@ -223,7 +223,7 @@ export function summarize(rows: AggregateRow[]) {
 /**
  * Parse YYYY-MM-DD date range from URL search params with sensible defaults.
  *
- * Default = last 90 days. This matches Zernio's discovery-backfill window
+ * Default = last 90 days. This matches Peningads' discovery-backfill window
  * (the platform pulls 90 days of historical ads on initial connection),
  * so a freshly-connected brand sees data immediately. Users can narrow
  * via the "Last 7 / 30 / 90 days" date-range picker.

@@ -555,7 +555,7 @@ export type Database = {
           name: string
           owner_user_id: string | null
           updated_at: string | null
-          zernio_profile_id: string | null
+          peningads_profile_id: string | null
         }
         Insert: {
           assigned_client_user_id?: string | null
@@ -569,7 +569,7 @@ export type Database = {
           name: string
           owner_user_id?: string | null
           updated_at?: string | null
-          zernio_profile_id?: string | null
+          peningads_profile_id?: string | null
         }
         Update: {
           assigned_client_user_id?: string | null
@@ -583,7 +583,7 @@ export type Database = {
           name?: string
           owner_user_id?: string | null
           updated_at?: string | null
-          zernio_profile_id?: string | null
+          peningads_profile_id?: string | null
         }
         Relationships: [
           {

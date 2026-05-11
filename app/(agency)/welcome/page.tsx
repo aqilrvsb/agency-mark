@@ -73,7 +73,7 @@ export default async function WelcomePage() {
       id: "connection",
       title: "Connect ad accounts",
       description:
-        "Once the client connects via Zernio, paste the external account ID so syncing starts.",
+        "Once the client connects via Peningads, paste the external account ID so syncing starts.",
       icon: Plug,
       done: connectionsExist,
       href: brandsExist ? `/clients/${brands![0].id}?tab=connections` : "/clients",

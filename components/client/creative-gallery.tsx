@@ -13,7 +13,7 @@ const fmtPct = (n: number) => `${n.toFixed(2)}%`;
  * Visual grid of ad creatives with thumbnail + ad copy + KPIs.
  *
  * Source: ad-level rows from aggregateAdData(rows, "ad"). The thumbnail
- * URLs come from Zernio's /v1/ads creative.thumbnailUrl (Meta CDN) which
+ * URLs come from Peningads' /v1/ads creative.thumbnailUrl (Meta CDN) which
  * we now persist into ad_data.data.creative_thumbnail at sync time.
  *
  * Click a card to open the lightbox modal:

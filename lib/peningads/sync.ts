@@ -1,12 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
 import {
-  getZernio,
-  toZernioAdsPlatform,
-  type ZernioAd,
-  type ZernioAdMetrics,
-  type ZernioAdsPlatform,
-  type ZernioPlatformAdAccount,
+  getPeningads,
+  toPeningadsAdsPlatform,
+  type PeningadsAd,
+  type PeningadsAdMetrics,
+  type PeningadsAdsPlatform,
+  type PeningadsPlatformAdAccount,
 } from "./client";
 
 export type Platform = "meta_ads" | "tiktok_ads" | "meta_insights" | "google_ads";
@@ -34,7 +34,7 @@ export async function syncBrandWindow(opts: {
   toDate: string;   // YYYY-MM-DD
 }): Promise<SyncResult> {
   const admin = createAdminClient();
-  const zernio = getZernio();
+  const peningads = getPeningads();
   const errors: string[] = [];
   const rowsByPlatform: Record<string, number> = {};
   let adAccountsDiscovered = 0;
@@ -62,14 +62,14 @@ export async function syncBrandWindow(opts: {
 
   for (const sa of socialAccounts) {
     const internalPlatform = sa.platform as string;
-    const zernioPlatform = toZernioAdsPlatform(internalPlatform);
-    if (!zernioPlatform) continue;
+    const peningadsPlatform = toPeningadsAdsPlatform(internalPlatform);
+    if (!peningadsPlatform) continue;
     const socialAccountId = sa.external_account_id as string;
 
     // 1. Discover Platform Ad Accounts under this Social Account
-    let adAccounts: ZernioPlatformAdAccount[] = [];
+    let adAccounts: PeningadsPlatformAdAccount[] = [];
     try {
-      adAccounts = await zernio.listAdAccounts(socialAccountId);
+      adAccounts = await peningads.listAdAccounts(socialAccountId);
     } catch (e) {
       errors.push(`listAdAccounts(${socialAccountId}): ${e instanceof Error ? e.message : String(e)}`);
       continue;
@@ -105,9 +105,9 @@ export async function syncBrandWindow(opts: {
         // Paginate through ads (limit 100, up to 5 pages = 500 ads max per
         // sync — plenty for an SME, prevents runaway calls)
         for (let page = 1; page <= 5; page++) {
-          const r = await zernio.listAds({
+          const r = await peningads.listAds({
             adAccountId: adAcc.id,
-            platform: zernioPlatform,
+            platform: peningadsPlatform,
             fromDate: opts.fromDate,
             toDate: opts.toDate,
             limit: 100,
@@ -121,19 +121,19 @@ export async function syncBrandWindow(opts: {
           //     page already gave us the metrics).
           //  2. Daily-enhance pass — for ads with substantive spend, swap
           //     the summary row for per-day rows from /v1/ads/{adId}/analytics.
-          //     Throttled to 1 call / 1.1s to stay under Zernio's 60 req/min.
-          //     If we hit the rate limit anyway, fall back to the summary
-          //     row already in the buffer.
+          //     Throttled to 1 call / 1.1s to stay under the data provider's
+          //     60 req/min limit. If we hit the rate limit anyway, fall back
+          //     to the summary row already in the buffer.
           interface AdSnap {
-            ad: ZernioAd;
-            metrics: ZernioAdMetrics;
+            ad: PeningadsAd;
+            metrics: PeningadsAdMetrics;
             adId: string;
           }
           const snaps: AdSnap[] = [];
           for (const ad of r.ads) {
             const adId = ad._id ?? ad.id;
             if (!adId) continue;
-            const m = (ad as { metrics?: ZernioAdMetrics }).metrics ?? {};
+            const m = (ad as { metrics?: PeningadsAdMetrics }).metrics ?? {};
             const lastSyncedAt = (m as { lastSyncedAt?: string }).lastSyncedAt;
             const hasAnyMetric =
               num(m.spend) > 0 ||
@@ -162,7 +162,7 @@ export async function syncBrandWindow(opts: {
           for (let i = 0; i < enhanceTargets.length && !rateLimited; i++) {
             const s = enhanceTargets[i];
             try {
-              const analytics = await zernio.getAdAnalytics(s.adId, {
+              const analytics = await peningads.getAdAnalytics(s.adId, {
                 fromDate: opts.fromDate,
                 toDate: opts.toDate,
               });
@@ -266,11 +266,11 @@ function toRow(p: {
   companyId: string;
   brandId: string;
   internalPlatform: string;
-  adAccount: ZernioPlatformAdAccount;
-  ad: ZernioAd;
-  day: ZernioAdMetrics & { date: string };
+  adAccount: PeningadsPlatformAdAccount;
+  ad: PeningadsAd;
+  day: PeningadsAdMetrics & { date: string };
 }): PerDayRow {
-  // Normalize the daily metrics into the JSONB column. Keep both Zernio's
+  // Normalize the daily metrics into the JSONB column. Keep both Peningads'
   // raw field names AND our canonical ones so downstream code that reads
   // either form keeps working.
   const m = p.day;
@@ -286,7 +286,7 @@ function toRow(p: {
     cpm: num(m.cpm),
     cpa: num(m.cpa),
     roas: num(m.roas),
-    // ad / campaign context — Zernio actually returns platformCampaignId /
+    // ad / campaign context — Peningads actually returns platformCampaignId /
     // platformAdSetId (the Meta IDs), not campaignId / adSetId. Read both.
     ad_id: p.ad._id ?? p.ad.id ?? null,
     ad_name: p.ad.name ?? null,
@@ -299,7 +299,7 @@ function toRow(p: {
     creative_thumbnail: (p.ad as { creative?: { thumbnailUrl?: string } }).creative?.thumbnailUrl ?? null,
     creative_body: (p.ad as { creative?: { body?: string } }).creative?.body ?? null,
     // Capture image + video URLs so the creative gallery's lightbox can
-    // render them (image = larger view, video = inline player). Zernio's
+    // render them (image = larger view, video = inline player). Peningads'
     // videoUrl points at the public facebook.com/watch page; we render it
     // through Meta's video plugin iframe in the modal so it plays inline.
     creative_image_url: (p.ad as { creative?: { imageUrl?: string } }).creative?.imageUrl ?? null,

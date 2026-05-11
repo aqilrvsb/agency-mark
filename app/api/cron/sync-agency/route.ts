@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { syncAgency } from "@/lib/zernio/sync";
+import { syncAgency } from "@/lib/peningads/sync";
 
 /**
  * Manual sync trigger for a single agency. Used by master admin "Sync now" button.

@@ -83,7 +83,7 @@ export function AddAdAccountForm({ brandId }: { brandId: string }) {
           placeholder="act_123456789 or 7012345678901234"
         />
         <p className="text-xs text-[var(--color-text-muted)] mt-1">
-          Connect this account in your Zernio dashboard first, then paste its ID here.
+          Connect this account in your Peningads dashboard first, then paste its ID here.
         </p>
       </div>
 

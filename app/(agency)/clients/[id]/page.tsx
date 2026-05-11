@@ -294,7 +294,7 @@ async function TabContent({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Plug className="w-5 h-5" /> Connected ad accounts</CardTitle>
-          <CardDescription>Add the external ID after the client connects via Zernio.</CardDescription>
+          <CardDescription>Add the external ID after the client connects via Peningads.</CardDescription>
         </CardHeader>
         <div className="space-y-2">
           {(adAccounts ?? []).map((a) => {
@@ -326,16 +326,16 @@ async function TabContent({
               <Plug className="w-10 h-10 text-[var(--color-text-muted)] mx-auto mb-3" />
               <div className="text-sm font-bold mb-1">No ad accounts connected yet</div>
               <div className="text-xs text-[var(--color-text-muted)] mb-4 max-w-md mx-auto leading-relaxed">
-                The client connects their Facebook / TikTok account via Zernio from their portal.
+                The client connects their Facebook / TikTok account via Peningads from their portal.
                 If the client already connected, paste the external account ID below to map it.
               </div>
               <a
-                href="https://zernio.com/dashboard"
+                href="https://peningads.com/dashboard"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[var(--color-orange)] text-[#0a0a0a] hover:bg-[var(--color-orange-hover)] transition mb-3"
               >
-                Open Zernio dashboard →
+                Open Peningads dashboard →
               </a>
               <div className="pt-2">
                 <AddAdAccountForm brandId={brandId} />

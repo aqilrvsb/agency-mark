@@ -3,7 +3,7 @@ import { requireClient } from "@/lib/auth/guards";
 import { Card, CardTitle, CardDescription, CardHeader } from "@/components/ui/card";
 import { Plug, CheckCircle2, AlertCircle, Building2, ShieldAlert } from "lucide-react";
 import { ConnectButton } from "./connect-button";
-import { syncBrandConnections } from "@/lib/zernio/sync-connections";
+import { syncBrandConnections } from "@/lib/peningads/sync-connections";
 
 export const dynamic = "force-dynamic";
 
@@ -23,14 +23,14 @@ export default async function ClientConnectionsPage({
     .eq("assigned_client_user_id", user.id)
     .maybeSingle();
 
-  // Reconcile Zernio's connections into our brand_ad_accounts. Best-effort —
-  // page still renders if Zernio is down. This keeps the "Connected" badge
+  // Reconcile Peningads' connections into our brand_ad_accounts. Best-effort —
+  // page still renders if Peningads is down. This keeps the "Connected" badge
   // accurate without needing webhook plumbing.
   if (brand?.id) {
     try {
       await syncBrandConnections(brand.id as string);
     } catch (e) {
-      console.error("[connections page] zernio sync failed:", e);
+      console.error("[connections page] peningads sync failed:", e);
     }
   }
 
