@@ -24,6 +24,11 @@ export interface AggregateRow {
   // Creative — populated for ad-level aggregation; null for campaign/adset.
   creativeThumbnail: string | null;
   creativeBody: string | null;
+  // Larger media for the lightbox modal — image (Meta hi-res) or video.
+  // Both nullable; lightbox falls back to creativeThumbnail at full size.
+  creativeImageUrl: string | null;
+  creativeVideoUrl: string | null;
+  creativeVideoId: string | null;
   // Parent context — populated for nested levels so the data table can
   // render CAMPAIGN / AD SET columns alongside the row's own name.
   campaignName: string | null;
@@ -102,6 +107,9 @@ export function aggregateAdData(rows: AdDataRow[], level: AdLevel): AggregateRow
       videoViews: 0,
       creativeThumbnail: null as string | null,
       creativeBody: null as string | null,
+      creativeImageUrl: null as string | null,
+      creativeVideoUrl: null as string | null,
+      creativeVideoId: null as string | null,
       campaignName: null as string | null,
       adsetName: null as string | null,
       _reachUnion: new Set<string>(),
@@ -116,6 +124,15 @@ export function aggregateAdData(rows: AdDataRow[], level: AdLevel): AggregateRow
       }
       if (!existing.creativeBody) {
         existing.creativeBody = pickString(d, ["creative_body", "ad_copy", "body"]);
+      }
+      if (!existing.creativeImageUrl) {
+        existing.creativeImageUrl = pickString(d, ["creative_image_url", "image_url"]);
+      }
+      if (!existing.creativeVideoUrl) {
+        existing.creativeVideoUrl = pickString(d, ["creative_video_url", "video_url"]);
+      }
+      if (!existing.creativeVideoId) {
+        existing.creativeVideoId = pickString(d, ["creative_video_id", "video_id"]);
       }
     }
 

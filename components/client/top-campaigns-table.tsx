@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Megaphone } from "lucide-react";
 import type { AggregateRow } from "@/lib/client-data/aggregate";
 import { EmptyState } from "./empty-state";
@@ -22,6 +22,18 @@ type SortKey = "spend" | "roas" | "conversions" | "ctr";
 
 export function TopCampaignsTable({ rows, drillBase }: { rows: AggregateRow[]; drillBase?: string }) {
   const router = useRouter();
+  const sp = useSearchParams();
+  // Propagate the parent page's date filter into the drill-down so the
+  // selected window doesn't reset to the default 90 days mid-flight.
+  const dateQs = useMemo(() => {
+    const start = sp.get("start");
+    const end = sp.get("end");
+    if (!start && !end) return "";
+    const out = new URLSearchParams();
+    if (start) out.set("start", start);
+    if (end) out.set("end", end);
+    return `?${out.toString()}`;
+  }, [sp]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("spend");
 
@@ -125,7 +137,7 @@ export function TopCampaignsTable({ rows, drillBase }: { rows: AggregateRow[]; d
               filtered.map((r) => {
                 const statusKey = (r.status ?? "").toUpperCase();
                 const statusClass = STATUS_COLOR[statusKey] ?? "bg-white/5 text-[var(--color-text-muted)]";
-                const drillHref = drillBase ? `${drillBase}/${encodeURIComponent(r.key)}` : null;
+                const drillHref = drillBase ? `${drillBase}/${encodeURIComponent(r.key)}${dateQs}` : null;
                 return (
                   <tr
                     key={r.key}

@@ -298,6 +298,13 @@ function toRow(p: {
     status: p.ad.status ?? p.ad.effectiveStatus ?? null,
     creative_thumbnail: (p.ad as { creative?: { thumbnailUrl?: string } }).creative?.thumbnailUrl ?? null,
     creative_body: (p.ad as { creative?: { body?: string } }).creative?.body ?? null,
+    // Capture image + video URLs so the creative gallery's lightbox can
+    // render them (image = larger view, video = inline player). Zernio's
+    // videoUrl points at the public facebook.com/watch page; we render it
+    // through Meta's video plugin iframe in the modal so it plays inline.
+    creative_image_url: (p.ad as { creative?: { imageUrl?: string } }).creative?.imageUrl ?? null,
+    creative_video_url: (p.ad as { creative?: { videoUrl?: string } }).creative?.videoUrl ?? null,
+    creative_video_id: (p.ad as { creative?: { videoId?: string } }).creative?.videoId ?? null,
   } satisfies Record<string, unknown>;
 
   return {

@@ -65,6 +65,26 @@ export default async function CampaignDetailPage({
   const priorEnd = isoMinusDays(start, 1);
   const priorStart = isoMinusDays(priorEnd, days - 1);
 
+  // Resolve the campaign name from ANY ad_data row that matches this id —
+  // independent of the date filter — so the page header still shows the
+  // human name when the chosen window happens to exclude all spend.
+  const { data: nameProbe } = await supabase
+    .from("ad_data")
+    .select("data")
+    .eq("brand_id", brand.id as string)
+    .order("date_start", { ascending: false })
+    .limit(200);
+
+  const probeMatches = (nameProbe ?? []).find((r) => {
+    const d = (r.data as Record<string, unknown>) ?? {};
+    const cid = String(d.campaign_id ?? d.campaign_id_string ?? "");
+    const cname = String(d.campaign_name ?? d.campaign ?? "");
+    return cid === campaignId || cname === campaignId;
+  });
+  const probeName = probeMatches
+    ? String((probeMatches.data as Record<string, unknown>)?.campaign_name ?? "")
+    : "";
+
   const [{ data: currData }, { data: priorData }] = await Promise.all([
     supabase
       .from("ad_data")
@@ -97,7 +117,9 @@ export default async function CampaignDetailPage({
   const totals = summarize(campaignAgg);
   const priorTotals = summarize(priorAgg);
 
-  const campaignName = campaignAgg[0]?.name ?? campaignId;
+  // Display priority: name from windowed slice → name from any-time probe →
+  // raw id (only as last resort, e.g. genuinely unknown campaign).
+  const campaignName = campaignAgg[0]?.name || probeName || campaignId;
   const platforms = [...new Set((currCampaign ?? []).map((r) => r.platform as string))];
 
   // Build daily series
