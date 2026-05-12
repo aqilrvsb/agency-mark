@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-black" strokeWidth={2.5} />
             </div>
-            <span className="font-display font-extrabold text-xl">AdSolution</span>
+            <span className="font-display font-extrabold text-xl">PeningAds</span>
           </Link>
 
           <h1 className="font-display font-extrabold text-3xl mb-2">Lupa password?</h1>

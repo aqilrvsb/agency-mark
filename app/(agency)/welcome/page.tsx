@@ -100,7 +100,7 @@ export default async function WelcomePage() {
           <Sparkles className="w-7 h-7 text-black" strokeWidth={2.5} />
         </div>
         <h1 className="font-display font-extrabold text-3xl lg:text-4xl mb-2">
-          Welcome to AdSolution, {user.full_name.split(" ")[0]}
+          Welcome to PeningAds, {user.full_name.split(" ")[0]}
         </h1>
         <p className="text-[var(--color-text-secondary)] text-sm">
           Four steps to get your agency tracking client ad performance in one dashboard.

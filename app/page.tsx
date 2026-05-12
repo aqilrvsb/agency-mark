@@ -27,7 +27,7 @@ const FAQ = [
   { q: "Saya kena ada berapa client untuk worth it?", a: "Mula dari 1 client. Free 14 hari trial, tiada credit card required. Plan Pro RM199/bulan handle 100 client tanpa upgrade." },
   { q: "Berapa cepat setup?", a: "Daftar agensi dalam 2 minit. Tambah client pertama dalam 3 minit. Data FB+TikTok auto-sync dalam masa 24 jam pertama." },
   { q: "Macam mana data FB & TikTok masuk?", a: "Kami handle integration. Anda hanya perlu tambah client + ad account ID. Data tarik automatic setiap hari ke dashboard anda." },
-  { q: "Boleh white-label client portal?", a: "Ya. Pro plan ada custom domain, logo, brand colors. Client anda tengok dashboard branded dengan agensi anda — bukan AdSolution." },
+  { q: "Boleh white-label client portal?", a: "Ya. Pro plan ada custom domain, logo, brand colors. Client anda tengok dashboard branded dengan agensi anda — bukan PeningAds." },
   { q: "Boleh cancel bila-bila?", a: "Ya. Tiada kontrak. Cancel anytime dari dashboard. Refund pro-rata jika cancel dalam tempoh billing semasa." },
   { q: "Data saya selamat?", a: "Supabase + Postgres dengan Row Level Security. Setiap agensi data berasingan. Client cuma nampak brand mereka. Audit log built-in." },
 ];
@@ -58,7 +58,7 @@ export default function Home() {
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/30">
             <Sparkles className="w-5 h-5 text-black" strokeWidth={2.5} />
           </div>
-          <span className="font-display font-extrabold text-2xl tracking-tight">AdSolution</span>
+          <span className="font-display font-extrabold text-2xl tracking-tight">PeningAds</span>
         </Link>
         <div className="flex items-center gap-3">
           <Link href="/login" className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
@@ -525,13 +525,13 @@ export default function Home() {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-black" strokeWidth={2.5} />
             </div>
-            <span className="font-display font-bold text-[var(--color-text-primary)]">AdSolution</span>
+            <span className="font-display font-bold text-[var(--color-text-primary)]">PeningAds</span>
             <span>© 2026</span>
           </div>
           <div className="flex items-center gap-6">
             <a href="#" className="hover:text-[var(--color-text-primary)] transition">Terms</a>
             <a href="#" className="hover:text-[var(--color-text-primary)] transition">Privacy</a>
-            <a href="mailto:hello@adsolution.my" className="hover:text-[var(--color-text-primary)] transition">hello@adsolution.my</a>
+            <a href="mailto:hello@PeningAds.my" className="hover:text-[var(--color-text-primary)] transition">hello@PeningAds.my</a>
           </div>
         </div>
       </footer>

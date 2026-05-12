@@ -43,7 +43,7 @@ export default async function AgencySettingsPage() {
       <Card className="mb-4">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5" /> Change password</CardTitle>
-          <CardDescription>Update your AdSolution login password.</CardDescription>
+          <CardDescription>Update your PeningAds login password.</CardDescription>
         </CardHeader>
         <PasswordChangeForm />
       </Card>
@@ -51,7 +51,7 @@ export default async function AgencySettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><CreditCard className="w-5 h-5" /> Subscription</CardTitle>
-          <CardDescription>Your AdSolution plan.</CardDescription>
+          <CardDescription>Your PeningAds plan.</CardDescription>
         </CardHeader>
         <dl className="space-y-3 text-sm">
           <Row label="Plan" value={(subscription?.plan as string) ?? "—"} />

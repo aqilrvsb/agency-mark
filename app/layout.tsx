@@ -22,21 +22,21 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AdSolution.my : Sistem urus iklan FB & TikTok untuk agensi",
+  title: "PeningAds.my : Sistem urus iklan FB & TikTok untuk agensi",
   description:
     "Platform SaaS untuk agensi yang manage 100+ akaun iklan klien. Dashboard FB+TikTok dalam satu, white-label client portal, billing automatik.",
-  metadataBase: new URL("https://adsolution.my"),
+  metadataBase: new URL("https://PeningAds.my"),
   openGraph: {
-    title: "AdSolution.my : Sistem urus iklan FB & TikTok untuk agensi",
+    title: "PeningAds.my : Sistem urus iklan FB & TikTok untuk agensi",
     description:
       "Platform SaaS untuk agensi urus 100+ akaun iklan FB & TikTok dalam satu dashboard.",
     type: "website",
     locale: "ms_MY",
-    siteName: "AdSolution",
+    siteName: "PeningAds",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AdSolution.my",
+    title: "PeningAds.my",
     description:
       "Sistem urus iklan FB & TikTok untuk agensi.",
   },

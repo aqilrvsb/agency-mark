@@ -341,6 +341,8 @@ export class PeningadsClient {
     redirectUrl?: string;
     adAccountId?: string;          // metaads only (e.g. act_1234567890)
     adAccountIds?: string[];       // metaads only — multiple
+    headless?: boolean;            // white-label flow: after OAuth, browser lands on
+                                   // OUR redirect_url with tempToken — no provider UI
   }): Promise<
     | { alreadyConnected: true; accountId: string; platform: string; username?: string; displayName?: string; scopedAdAccountIds?: string[] }
     | { authUrl: string; state?: string }
@@ -355,7 +357,81 @@ export class PeningadsClient {
     if (params.adAccountIds && params.adAccountIds.length > 0) {
       for (const a of params.adAccountIds) qs.append("adAccountIds", a);
     }
+    if (params.headless) qs.set("headless", "true");
     return this.request(`/connect/${params.platform}/ads?${qs.toString()}`);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Headless white-label Facebook Page picker
+  // After OAuth completes, the browser lands on our redirect_url with
+  // tempToken + userProfile + connect_token query params. We render
+  // our OWN page selector UI on adsolution.my and call these two
+  // endpoints server-side to (1) list the user's manageable Pages,
+  // and (2) finalize the connection with their pick.
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * GET /v1/connect/facebook/select-page?profileId=X&tempToken=Y
+   * Returns the list of Pages the user can manage after Meta OAuth.
+   * The tempToken comes through the OAuth redirect — it scopes this
+   * call to that one in-flight connection.
+   */
+  async listFacebookPages(params: {
+    profileId: string;
+    tempToken: string;
+  }): Promise<{
+    pages: Array<{
+      id: string;
+      name: string;
+      category?: string;
+      fan_count?: number;
+      picture?: { data?: { url?: string } };
+      username?: string;
+    }>;
+  }> {
+    const qs = new URLSearchParams({
+      profileId: params.profileId,
+      tempToken: params.tempToken,
+    });
+    const res = await this.request<{
+      pages?: Array<{ id: string; name: string; category?: string; fan_count?: number; picture?: { data?: { url?: string } }; username?: string }>;
+    }>(`/connect/facebook/select-page?${qs.toString()}`);
+    return { pages: res.pages ?? [] };
+  }
+
+  /**
+   * POST /v1/connect/facebook/select-page
+   * Finalizes the connection by saving the user's chosen pageId. The
+   * provider then creates the SocialAccount (and the metaads ads-side
+   * child, if /connect/facebook/ads was the original entrypoint).
+   */
+  async selectFacebookPage(params: {
+    profileId: string;
+    pageId: string;
+    tempToken: string;
+    userProfile: {
+      id: string;
+      username?: string;
+      displayName?: string;
+      profilePicture?: string;
+      profileUrl?: string;
+      bio?: string | null;
+    };
+    redirectUrl?: string;
+  }): Promise<{ accountId: string; platform: string; selectedPageId: string; selectedPageName: string }> {
+    return this.request<{ accountId: string; platform: string; selectedPageId: string; selectedPageName: string }>(
+      `/connect/facebook/select-page`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          profileId: params.profileId,
+          pageId: params.pageId,
+          tempToken: params.tempToken,
+          userProfile: params.userProfile,
+          ...(params.redirectUrl ? { redirect_url: params.redirectUrl } : {}),
+        }),
+      }
+    );
   }
 
   /**

@@ -78,7 +78,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
   }
 
   const origin = new URL(req.url).origin;
-  const redirectUrl = `${origin}/client/connections?ok=1&platform=${platform}`;
+  // For Facebook we use the headless flow: after Meta OAuth the browser
+  // lands on OUR Page picker page (not the provider's hosted UI). For
+  // separate-token / standalone platforms (tiktok, google) the provider
+  // still owns the redirect target since there's no page-picker step.
+  const redirectUrl =
+    platform === "facebook"
+      ? `${origin}/client/connections/select-page?platform=${platform}`
+      : `${origin}/client/connections?ok=1&platform=${platform}`;
 
   const user = await requireClient();
   const supabase = await createClient();
@@ -119,6 +126,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ platform: stri
       platform: adsSlug,
       profileId,
       redirectUrl,
+      // Headless = our domain renders the Page picker, no provider UI shown.
+      // Only meaningful for same-token platforms (facebook/instagram); the
+      // provider ignores it on tiktok/google flows.
+      headless: platform === "facebook",
     });
 
     // Same-token shortcut (Meta / IG / LinkedIn / Pinterest) when the parent

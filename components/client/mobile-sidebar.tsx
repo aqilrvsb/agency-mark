@@ -35,7 +35,7 @@ export function MobileSidebarToggle({ children }: { children: React.ReactNode })
         >
           <Menu className="w-5 h-5" />
         </button>
-        <span className="font-display font-extrabold text-base">AdSolution</span>
+        <span className="font-display font-extrabold text-base">PeningAds</span>
         <span className="w-10" />
       </div>
 

@@ -16,7 +16,7 @@ export default async function AgencyInvoicesPage() {
     <div className="p-8 max-w-5xl mx-auto">
       <header className="mb-8">
         <h1 className="font-display font-extrabold text-4xl mb-2">Invoices</h1>
-        <p className="text-[var(--color-text-secondary)]">Your AdSolution subscription invoices.</p>
+        <p className="text-[var(--color-text-secondary)]">Your PeningAds subscription invoices.</p>
       </header>
 
       <Card className="!p-0 !border-0 !bg-transparent">

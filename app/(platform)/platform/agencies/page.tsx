@@ -22,7 +22,7 @@ export default async function AgenciesPage() {
       <header className="flex items-start justify-between mb-8">
         <div>
           <h1 className="font-display font-extrabold text-4xl mb-2">Agencies</h1>
-          <p className="text-[var(--color-text-secondary)]">All agencies registered on AdSolution.</p>
+          <p className="text-[var(--color-text-secondary)]">All agencies registered on PeningAds.</p>
         </div>
         <Link
           href="/platform/agencies/new"

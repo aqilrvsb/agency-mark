@@ -16,7 +16,7 @@ export default async function AgencyLayout({ children }: { children: React.React
               <Sparkles className="w-4 h-4 text-black" strokeWidth={2.5} />
             </div>
             <div>
-              <div className="font-display font-extrabold text-lg leading-none">AdSolution</div>
+              <div className="font-display font-extrabold text-lg leading-none">PeningAds</div>
               <div className="text-[10px] uppercase tracking-widest text-[var(--color-orange)] mt-0.5">Agency</div>
             </div>
           </Link>
