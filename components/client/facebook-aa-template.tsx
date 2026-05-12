@@ -473,7 +473,7 @@ export function FacebookAATemplate(props: FacebookTemplateProps) {
               </span>
             </div>
             <div className="mt-3">
-              <Sparkline data={dailySpendSpark} color="#facc15" height={32} />
+              <Sparkline data={dailySpendSpark} color="#a855f7" height={32} />
             </div>
           </div>
         </div>

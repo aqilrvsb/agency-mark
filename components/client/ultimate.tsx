@@ -8,7 +8,7 @@
  * Cole Knaflic / Andy Cotgreave dashboard-design canon.
  *
  * Theme: dark canvas (#0a0a0a), card (#161616), border (#262626),
- * yellow accent (#facc15) reserved for the hero metric only.
+ * yellow accent (#a855f7) reserved for the hero metric only.
  *
  * Server-rendered. No client-side JS unless explicitly noted.
  */
@@ -78,7 +78,7 @@ export function DeltaArrow({
 
 export function Sparkline({
   data,
-  color = "#facc15",
+  color = "#a855f7",
   height = 28,
   className = "",
 }: {
@@ -213,7 +213,7 @@ export function KpiTile({ label, value, delta, invertDelta, spark, hint }: KpiTi
   const goodDelta = invertDelta ? !up : up;
   const sparkColor =
     delta == null
-      ? "#facc15"
+      ? "#a855f7"
       : Math.abs(delta) < 0.5
       ? "#737373"
       : goodDelta
@@ -273,7 +273,7 @@ export function HeroMetricCard({
         className="absolute -inset-px rounded-2xl opacity-30 blur-[2px] motion-reduce:hidden"
         style={{
           background:
-            "conic-gradient(from 0deg, transparent 0deg, #facc15 60deg, transparent 140deg)",
+            "conic-gradient(from 0deg, transparent 0deg, #a855f7 60deg, transparent 140deg)",
           animation: "ad-hero-spin 9s linear infinite",
         }}
       />
@@ -297,7 +297,7 @@ export function HeroMetricCard({
         )}
         {spark && spark.length > 1 && (
           <div className="mt-4">
-            <Sparkline data={spark} color="#facc15" height={36} />
+            <Sparkline data={spark} color="#a855f7" height={36} />
           </div>
         )}
       </div>
@@ -433,8 +433,8 @@ export function DualAxisTrend({
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="none" style={{ height }}>
         <defs>
           <linearGradient id="primAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#facc15" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#facc15" stopOpacity="0" />
+            <stop offset="0%" stopColor="#a855f7" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
           </linearGradient>
         </defs>
         {yLines.map((t, i) => (
@@ -486,7 +486,7 @@ export function DualAxisTrend({
           );
         })}
         <path d={primArea} fill="url(#primAreaGrad)" />
-        <path d={primPath} fill="none" stroke="#facc15" strokeOpacity="0.7" strokeWidth={1.5} strokeLinejoin="round" />
+        <path d={primPath} fill="none" stroke="#a855f7" strokeOpacity="0.7" strokeWidth={1.5} strokeLinejoin="round" />
         <path d={secLine} fill="none" stroke="#34d399" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
       </svg>
     </div>
@@ -572,7 +572,7 @@ export function ContributionBars({
                       width: `${pct}%`,
                       background:
                         i === 0
-                          ? "linear-gradient(90deg, #facc15 0%, #fde047 100%)"
+                          ? "linear-gradient(90deg, #a855f7 0%, #c084fc 100%)"
                           : "rgba(250, 204, 21, 0.45)",
                     }}
                   />
@@ -990,7 +990,7 @@ export function CreativeWall({
       {ads.map((ad) => {
         const score = adScore(ad);
         const ringColor =
-          score >= 70 ? "#34d399" : score >= 40 ? "#facc15" : "#fb7185";
+          score >= 70 ? "#34d399" : score >= 40 ? "#a855f7" : "#fb7185";
         return (
           <div
             key={ad.key}
