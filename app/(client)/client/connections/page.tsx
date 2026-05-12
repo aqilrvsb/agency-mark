@@ -143,7 +143,6 @@ export default async function ClientConnectionsPage({
             description="Search, Display, YouTube campaigns"
             color="from-[var(--color-orange-700)] to-[var(--color-orange-400)]"
             connected={connected.has("google")}
-            comingSoon
           />
           <PlatformCard
             platform="tiktok"
