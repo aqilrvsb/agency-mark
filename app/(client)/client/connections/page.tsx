@@ -4,6 +4,7 @@ import { Card, CardTitle, CardDescription, CardHeader } from "@/components/ui/ca
 import { Plug, CheckCircle2, AlertCircle, Building2, ShieldAlert } from "lucide-react";
 import { ConnectButton } from "./connect-button";
 import { syncBrandConnections } from "@/lib/peningads/sync-connections";
+import { PLATFORM_BRANDS, type PlatformBrand } from "./platform-glyphs";
 
 export const dynamic = "force-dynamic";
 
@@ -130,27 +131,13 @@ export default async function ClientConnectionsPage({
 
       {brand && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <PlatformCard
-            platform="facebook"
-            label="Facebook Ads"
-            description="Paid campaigns from Meta Ads Manager"
-            color="from-[var(--color-orange-700)] to-[var(--color-orange-400)]"
-            connected={connected.has("facebook")}
-          />
-          <PlatformCard
-            platform="google"
-            label="Google Ads"
-            description="Search, Display, YouTube campaigns"
-            color="from-[var(--color-orange-700)] to-[var(--color-orange-400)]"
-            connected={connected.has("google")}
-          />
-          <PlatformCard
-            platform="tiktok"
-            label="TikTok Ads"
-            description="TikTok Ads Manager campaigns"
-            color="from-[var(--color-orange-700)] to-[var(--color-orange-400)]"
-            connected={connected.has("tiktok")}
-          />
+          {PLATFORM_BRANDS.map((b) => (
+            <PlatformCard
+              key={b.slug}
+              brand={b}
+              connected={connected.has(b.slug)}
+            />
+          ))}
         </div>
       )}
 
@@ -233,45 +220,61 @@ export default async function ClientConnectionsPage({
 }
 
 function PlatformCard({
-  platform,
-  label,
-  description,
-  color,
+  brand,
   connected,
-  comingSoon,
 }: {
-  platform: string;
-  label: string;
-  description: string;
-  color: string;
+  brand: PlatformBrand;
   connected: boolean;
-  comingSoon?: boolean;
 }) {
+  const Glyph = brand.Glyph;
+  // Google's icon tile is white-on-white; needs a subtle border + minimal
+  // shadow so the four-colour glyph reads. The other two have coloured
+  // backgrounds, so we lean on a coloured drop-shadow for depth.
+  const isLight = brand.slug === "google";
+
   return (
-    <Card>
-      <div className="flex items-start gap-3 mb-4">
-        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0`}>
-          <Plug className="w-6 h-6 text-white" strokeWidth={2.5} />
+    <div className="relative rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] p-5 sm:p-6 overflow-hidden transition-all hover:border-[var(--color-border-bright)]">
+      {/* Soft brand-coloured glow bleeding from the top-left corner —
+          gives each tile its own colour story without overpowering the
+          dark canvas. Disabled for Google (white) so it doesn't wash out. */}
+      {!isLight && (
+        <div
+          aria-hidden
+          className="absolute -top-16 -left-16 w-40 h-40 rounded-full blur-3xl pointer-events-none"
+          style={{ background: `rgba(${brand.brandRgb}, 0.18)` }}
+        />
+      )}
+
+      <div className="relative flex items-start gap-3 mb-5">
+        <div
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+            isLight ? "border border-[var(--color-border-bright)]" : ""
+          }`}
+          style={{
+            background: brand.brandHex,
+            boxShadow: isLight
+              ? "0 4px 14px -4px rgba(0,0,0,0.4)"
+              : `0 8px 22px -6px rgba(${brand.brandRgb}, 0.55)`,
+          }}
+        >
+          <Glyph className="w-7 h-7" />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-bold">{label}</div>
-          <div className="text-xs text-[var(--color-text-muted)]">{description}</div>
+
+        <div className="flex-1 min-w-0 pt-0.5">
+          <div className="font-bold text-base leading-tight">{brand.label}</div>
+          <div className="text-xs text-[var(--color-text-muted)] mt-1">
+            {brand.description}
+          </div>
         </div>
+
         {connected && (
-          <span className="text-xs px-2 py-1 rounded-md bg-emerald-500/15 text-emerald-300 font-bold uppercase whitespace-nowrap">Connected</span>
-        )}
-        {comingSoon && !connected && (
-          <span className="text-xs px-2 py-1 rounded-md bg-white/5 text-[var(--color-text-muted)] font-bold uppercase whitespace-nowrap border border-[var(--color-border)]">Soon</span>
+          <span className="text-[10px] px-2 py-1 rounded-md bg-emerald-500/15 text-emerald-300 font-bold uppercase whitespace-nowrap tracking-[0.08em] border border-emerald-500/25">
+            Connected
+          </span>
         )}
       </div>
-      {comingSoon ? (
-        <div className="px-4 py-2.5 rounded-xl text-xs text-[var(--color-text-muted)] bg-white/5 border border-[var(--color-border)] text-center leading-relaxed">
-          Self-serve Google Ads OAuth coming soon.<br />
-          <span className="text-[10px]">We&apos;ll email you the moment it&apos;s ready to connect.</span>
-        </div>
-      ) : (
-        <ConnectButton platform={platform} connected={connected} />
-      )}
-    </Card>
+
+      <ConnectButton platform={brand.slug} connected={connected} />
+    </div>
   );
 }
