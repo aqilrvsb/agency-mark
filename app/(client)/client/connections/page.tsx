@@ -134,14 +134,14 @@ export default async function ClientConnectionsPage({
             platform="facebook"
             label="Facebook Ads"
             description="Paid campaigns from Meta Ads Manager"
-            color="from-blue-400 to-blue-600"
+            color="from-[var(--color-orange-700)] to-[var(--color-orange-400)]"
             connected={connected.has("facebook")}
           />
           <PlatformCard
             platform="google"
             label="Google Ads"
             description="Search, Display, YouTube campaigns"
-            color="from-amber-400 to-amber-600"
+            color="from-[var(--color-orange-700)] to-[var(--color-orange-400)]"
             connected={connected.has("google")}
             comingSoon
           />
@@ -149,7 +149,7 @@ export default async function ClientConnectionsPage({
             platform="tiktok"
             label="TikTok Ads"
             description="TikTok Ads Manager campaigns"
-            color="from-pink-400 to-pink-600"
+            color="from-[var(--color-orange-700)] to-[var(--color-orange-400)]"
             connected={connected.has("tiktok")}
           />
         </div>
@@ -219,7 +219,7 @@ export default async function ClientConnectionsPage({
                       </ul>
                     </div>
                   ) : (p === "meta" || p === "meta_ads") ? (
-                    <div className="ml-11 mt-2 px-3 py-2 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs text-amber-200/90">
+                    <div className="ml-11 mt-2 px-3 py-2 rounded-lg border border-[var(--color-orange)]/25 bg-[var(--color-orange-tint)] text-xs text-[var(--color-orange-300)]">
                       No ad accounts surfaced yet — reconnect with the &quot;Manage ads&quot; permission ticked on the Meta consent screen.
                     </div>
                   ) : null}
@@ -252,7 +252,7 @@ function PlatformCard({
     <Card>
       <div className="flex items-start gap-3 mb-4">
         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0`}>
-          <Plug className="w-6 h-6 text-black" strokeWidth={2.5} />
+          <Plug className="w-6 h-6 text-white" strokeWidth={2.5} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-bold">{label}</div>
@@ -268,7 +268,7 @@ function PlatformCard({
       {comingSoon ? (
         <div className="px-4 py-2.5 rounded-xl text-xs text-[var(--color-text-muted)] bg-white/5 border border-[var(--color-border)] text-center leading-relaxed">
           Self-serve Google Ads OAuth coming soon.<br />
-          <span className="text-[10px]">In the meantime, ask your agency to wire it via Marketing API.</span>
+          <span className="text-[10px]">We&apos;ll email you the moment it&apos;s ready to connect.</span>
         </div>
       ) : (
         <ConnectButton platform={platform} connected={connected} />

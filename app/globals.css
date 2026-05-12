@@ -15,33 +15,33 @@
   --color-text-secondary: #b5b5b5;
   --color-text-muted: #707070;
 
-  /* Primary accent — PeningAds violet→magenta brand (per the
-     CONTENTLAB / WhatsApp-button reference). The legacy "orange"
-     variable names are kept so every `text-orange` / `bg-orange-50`
-     / `from-orange-400` class across the app renders violet without
-     a JSX-wide rename. Numeric shades map to Tailwind's violet
-     palette so gradients + hover states stay coherent.
-     Primary glow uses rgb(168, 85, 247) — see btn-primary / chip-pulse. */
-  --color-orange: #a855f7;
-  --color-orange-hover: #c084fc;
-  --color-orange-soft: rgba(168, 85, 247, 0.18);
-  --color-orange-tint: rgba(168, 85, 247, 0.08);
-  --color-orange-50:  #faf5ff;
-  --color-orange-100: #f3e8ff;
-  --color-orange-200: #e9d5ff;
-  --color-orange-300: #d8b4fe;
-  --color-orange-400: #c084fc;
-  --color-orange-500: #a855f7;
-  --color-orange-600: #9333ea;
-  --color-orange-700: #7e22ce;
-  --color-orange-800: #6b21a8;
-  --color-orange-900: #581c87;
+  /* Primary accent — PeningAds magenta/fuchsia brand. The legacy
+     "orange" variable names are kept so every `text-orange` /
+     `bg-orange-50` / `from-orange-400` class across the app renders
+     magenta without a JSX-wide rename. Numeric shades map to
+     Tailwind's fuchsia palette so gradients + hover states stay
+     coherent.
+     Primary glow uses rgb(217, 70, 239) — see btn-primary / chip-pulse. */
+  --color-orange: #d946ef;
+  --color-orange-hover: #e879f9;
+  --color-orange-soft: rgba(217, 70, 239, 0.18);
+  --color-orange-tint: rgba(217, 70, 239, 0.08);
+  --color-orange-50:  #fdf4ff;
+  --color-orange-100: #fae8ff;
+  --color-orange-200: #f5d0fe;
+  --color-orange-300: #f0abfc;
+  --color-orange-400: #e879f9;
+  --color-orange-500: #d946ef;
+  --color-orange-600: #c026d3;
+  --color-orange-700: #a21caf;
+  --color-orange-800: #86198f;
+  --color-orange-900: #701a75;
 
   /* Brand gradient stops — referenced from .btn-primary / .gradient-text
      so any future tweak only happens in one place. */
-  --gradient-brand-from: #6d28d9;   /* violet-700 — deep, vibrant */
-  --gradient-brand-via:  #a855f7;   /* violet-500 — body of the gradient */
-  --gradient-brand-to:   #d946ef;   /* fuchsia-500 — hot pink tail */
+  --gradient-brand-from: #a21caf;   /* fuchsia-700 — deep magenta */
+  --gradient-brand-via:  #d946ef;   /* fuchsia-500 — primary magenta */
+  --gradient-brand-to:   #f0abfc;   /* fuchsia-300 — light pink tail */
 
   /* Higgsfield neon-lime — secondary attention CTA */
   --color-lime: #c8f53e;
@@ -151,8 +151,8 @@ h1, h2, h3, h4, h5, h6, .font-display {
   pointer-events: none;
   z-index: 1;
   background-image:
-    linear-gradient(to right, rgba(168, 85, 247, 0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(168, 85, 247, 0.06) 1px, transparent 1px);
+    linear-gradient(to right, rgba(217, 70, 239, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(217, 70, 239, 0.06) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black, transparent);
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black, transparent);
@@ -192,7 +192,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   transition: transform 0.2s, background 0.2s, box-shadow 0.2s, filter 0.2s;
   /* Violet glow (rgb 168, 85, 247) keeps the brand consistent. */
   box-shadow:
-    0 6px 20px rgba(168, 85, 247, 0.40),
+    0 6px 20px rgba(217, 70, 239, 0.40),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
   letter-spacing: -0.01em;
 }
@@ -201,7 +201,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   transform: translateY(-2px);
   filter: brightness(1.08);
   box-shadow:
-    0 14px 34px rgba(168, 85, 247, 0.55),
+    0 14px 34px rgba(217, 70, 239, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
@@ -270,7 +270,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .card:hover {
   transform: translateY(-4px);
   border-color: var(--color-border-bright);
-  box-shadow: 0 24px 48px -16px rgba(168, 85, 247, 0.30);
+  box-shadow: 0 24px 48px -16px rgba(217, 70, 239, 0.30);
 }
 
 .input {
@@ -293,7 +293,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 .input:focus {
   border-color: var(--color-orange);
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.22);
+  box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.22);
 }
 
 .input::placeholder {
@@ -416,7 +416,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   border-radius: 36px;
   padding: 8px;
   box-shadow:
-    0 30px 80px -20px rgba(168, 85, 247, 0.45),
+    0 30px 80px -20px rgba(217, 70, 239, 0.45),
     0 0 0 2px rgba(255, 255, 255, 0.5),
     inset 0 0 0 2px rgba(255, 255, 255, 0.06);
 }
@@ -444,7 +444,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .bento:hover {
   transform: translateY(-4px);
   border-color: var(--color-border-bright);
-  box-shadow: 0 24px 48px -16px rgba(168, 85, 247, 0.30);
+  box-shadow: 0 24px 48px -16px rgba(217, 70, 239, 0.30);
 }
 
 .bento-deco {
@@ -465,7 +465,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   font-weight: 800;
   font-size: 13px;
   font-family: var(--font-mono);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+  box-shadow: 0 4px 12px rgba(217, 70, 239, 0.4);
 }
 
 .sticker {
@@ -480,7 +480,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   color: var(--color-orange-hover);
   letter-spacing: 0.02em;
   transform: rotate(-2deg);
-  box-shadow: 2px 2px 0 rgba(109, 40, 217, 0.25);
+  box-shadow: 2px 2px 0 rgba(162, 28, 175, 0.30);
 }
 
 .tag-mono {
@@ -518,8 +518,8 @@ details.faq-item {
 }
 
 details.faq-item[open] {
-  border-color: rgba(168, 85, 247, 0.4);
-  box-shadow: 0 8px 20px -8px rgba(168, 85, 247, 0.30);
+  border-color: rgba(217, 70, 239, 0.4);
+  box-shadow: 0 8px 20px -8px rgba(217, 70, 239, 0.30);
 }
 
 details.faq-item summary {
@@ -580,5 +580,5 @@ details.faq-item .faq-body {
 /* Admin sidebar nav hover — used by app/admin/layout.tsx
    (server component cannot use onMouseEnter handlers, so this stays in CSS) */
 .admin-nav-item:hover {
-  background: rgba(168, 85, 247, 0.10);
+  background: rgba(217, 70, 239, 0.10);
 }
