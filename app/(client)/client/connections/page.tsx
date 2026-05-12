@@ -245,11 +245,16 @@ export default async function ClientConnectionsPage({
               const pageId = c.external_account_id as string;
               const pageName = (c.external_account_name as string) || pageId;
               const linkedAdAccounts = adAccountsByPage.get(pageId) ?? [];
+              // Prefer the latest sync log; fall back to the alternate platform
+              // alias (meta vs meta_ads) so we don't miss; finally fall back
+              // to the page's own created_at so we never render "never" on a
+              // brand-new connection that hasn't been crawled yet.
               const lastSync =
                 lastSyncByPlatform.get(p) ??
                 lastSyncByPlatform.get(
                   p === "meta_ads" ? "meta" : p === "meta" ? "meta_ads" : p
-                );
+                ) ??
+                (c.created_at as string | null);
 
               return (
                 <div
