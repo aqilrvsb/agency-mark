@@ -1,10 +1,52 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireClient } from "@/lib/auth/guards";
 import { Card, CardTitle, CardDescription, CardHeader } from "@/components/ui/card";
-import { Plug, CheckCircle2, AlertCircle, Building2, ShieldAlert } from "lucide-react";
+import { CheckCircle2, AlertCircle, ShieldAlert, Sparkles } from "lucide-react";
 import { ConnectButton } from "./connect-button";
 import { syncBrandConnections } from "@/lib/peningads/sync-connections";
-import { PLATFORM_BRANDS, type PlatformBrand } from "./platform-glyphs";
+import {
+  PLATFORM_BRANDS,
+  FacebookGlyph,
+  GoogleGlyph,
+  TikTokGlyph,
+  type PlatformBrand,
+} from "./platform-glyphs";
+
+/** Human-readable "X min ago" / "just now" / "X hours ago". */
+function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return "never";
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  const s = Math.max(0, Math.round((now - then) / 1000));
+  if (s < 45) return "just now";
+  if (s < 90) return "1 min ago";
+  const m = Math.round(s / 60);
+  if (m < 45) return `${m} min ago`;
+  if (m < 90) return "1 hr ago";
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} hr ago`;
+  const d = Math.round(h / 24);
+  return `${d} day${d === 1 ? "" : "s"} ago`;
+}
+
+/** Resolve the right glyph + brand-tile colours for a stored platform code. */
+function platformVisual(p: string): {
+  Glyph: React.ComponentType<{ className?: string }>;
+  bg: string;
+  isLight: boolean;
+  label: string;
+} {
+  if (p === "meta" || p === "meta_ads" || p === "facebook") {
+    return { Glyph: FacebookGlyph, bg: "#1877F2", isLight: false, label: "Facebook" };
+  }
+  if (p === "google_ads" || p === "google") {
+    return { Glyph: GoogleGlyph, bg: "#ffffff", isLight: true, label: "Google Ads" };
+  }
+  if (p === "tiktok" || p === "tiktok_ads") {
+    return { Glyph: TikTokGlyph, bg: "#000000", isLight: false, label: "TikTok" };
+  }
+  return { Glyph: FacebookGlyph, bg: "#1877F2", isLight: false, label: p };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -35,9 +77,10 @@ export default async function ClientConnectionsPage({
     }
   }
 
-  // Pull both: the Page-level connections (brand_ad_accounts) and the
-  // discovered Ad Accounts under each Page (brand_platform_ad_accounts).
-  const [{ data: pageConnections }, { data: adAccounts }] = brand
+  // Pull: Page-level connections (brand_ad_accounts), the discovered Ad
+  // Accounts under each Page (brand_platform_ad_accounts), and the latest
+  // sync log so we can show "Synced 12 min ago" per Page.
+  const [{ data: pageConnections }, { data: adAccounts }, { data: syncLogs }] = brand
     ? await Promise.all([
         supabase
           .from("brand_ad_accounts")
@@ -49,8 +92,22 @@ export default async function ClientConnectionsPage({
           .select("id, platform, social_account_id, platform_ad_account_id, ad_account_name, currency, status, timezone_name")
           .eq("brand_id", brand.id as string)
           .order("ad_account_name", { ascending: true }),
+        supabase
+          .from("adzviser_sync_logs")
+          .select("platform, status, synced_at")
+          .eq("brand_id", brand.id as string)
+          .order("synced_at", { ascending: false })
+          .limit(20),
       ])
-    : [{ data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }];
+
+  // Map each platform code to its most recent successful sync timestamp
+  const lastSyncByPlatform = new Map<string, string>();
+  for (const log of (syncLogs ?? []) as Array<{ platform: string; status: string; synced_at: string }>) {
+    if (!lastSyncByPlatform.has(log.platform)) {
+      lastSyncByPlatform.set(log.platform, log.synced_at);
+    }
+  }
 
   const connected = new Set((pageConnections ?? []).map((c) => {
     const p = c.platform as string;
@@ -72,10 +129,34 @@ export default async function ClientConnectionsPage({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-      <header className="mb-8">
-        <h1 className="font-display font-extrabold text-3xl sm:text-4xl mb-2">Connect ad accounts</h1>
-        <p className="text-[var(--color-text-secondary)]">
-          Link your Facebook, Google, and TikTok ad accounts so {brand?.name ? `${brand.name as string}'s` : "your"} performance flows into this dashboard automatically.
+      <header className="mb-8 relative">
+        {/* Hairline magenta accent above the title — anchors the page to
+            the brand without crowding the headline. */}
+        <div
+          aria-hidden
+          className="h-px w-12 mb-4 rounded-full"
+          style={{
+            background:
+              "linear-gradient(90deg, var(--gradient-brand-via), var(--gradient-brand-to))",
+          }}
+        />
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)] mb-2">
+          <Sparkles className="w-3 h-3" style={{ color: "var(--color-orange)" }} />
+          Step 1 · Connect
+        </div>
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl mb-2 leading-[1.05]">
+          Connect ad accounts
+        </h1>
+        <p className="text-[var(--color-text-secondary)] max-w-2xl">
+          Link your Facebook, Google, and TikTok ad accounts so{" "}
+          {brand?.name ? (
+            <span className="font-bold text-[var(--color-text-primary)]">
+              {brand.name as string}
+            </span>
+          ) : (
+            "your"
+          )}
+          ’s performance flows into this dashboard automatically.
         </p>
       </header>
 
@@ -141,79 +222,141 @@ export default async function ClientConnectionsPage({
         </div>
       )}
 
-      {/* Connected: Page → Ad Accounts hierarchy */}
+      {/* Connected: Page → Ad Accounts hierarchy.
+          Mirrors the platform-tile design system: brand glyph tile,
+          live sync indicator, vertical accent line connecting parent
+          Page to its discovered ad accounts. */}
       {brand && (pageConnections ?? []).length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Plug className="w-5 h-5" /> Connected accounts</CardTitle>
-            <CardDescription>
-              {(pageConnections ?? []).length} active page connection{(pageConnections ?? []).length === 1 ? "" : "s"} ·
-              {" "}{(adAccounts ?? []).length} ad account{(adAccounts ?? []).length === 1 ? "" : "s"} discovered
-            </CardDescription>
-          </CardHeader>
+        <section className="mt-8">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)] mb-3">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+            </span>
+            Step 2 · Live · {(pageConnections ?? []).length} page{(pageConnections ?? []).length === 1 ? "" : "s"} · {(adAccounts ?? []).length} ad account{(adAccounts ?? []).length === 1 ? "" : "s"}
+          </div>
+          <h2 className="font-display font-extrabold text-xl mb-4">Connected accounts</h2>
 
-          <div className="divide-y divide-[var(--color-border)]">
+          <div className="space-y-3">
             {(pageConnections ?? []).map((c) => {
               const p = c.platform as string;
-              const label = p === "meta" || p === "meta_ads" ? "Facebook"
-                : p === "meta_insights" ? "Facebook Page Insights"
-                : p === "google_ads" ? "Google Ads"
-                : p === "tiktok" || p === "tiktok_ads" ? "TikTok"
-                : p;
+              const v = platformVisual(p);
+              const Glyph = v.Glyph;
               const pageId = c.external_account_id as string;
               const pageName = (c.external_account_name as string) || pageId;
               const linkedAdAccounts = adAccountsByPage.get(pageId) ?? [];
+              const lastSync =
+                lastSyncByPlatform.get(p) ??
+                lastSyncByPlatform.get(
+                  p === "meta_ads" ? "meta" : p === "meta" ? "meta_ads" : p
+                );
 
               return (
-                <div key={c.id as string} className="py-4">
+                <div
+                  key={c.id as string}
+                  className="rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] overflow-hidden transition-colors hover:border-[var(--color-border-bright)]"
+                >
                   {/* Page row */}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
-                        <Building2 className="w-4 h-4 text-blue-300" />
+                  <div className="px-4 sm:px-5 py-4 flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <div
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                          v.isLight ? "border border-[var(--color-border-bright)]" : ""
+                        }`}
+                        style={{
+                          background: v.bg,
+                          boxShadow: v.isLight
+                            ? "0 4px 12px -4px rgba(0,0,0,0.4)"
+                            : `0 6px 16px -6px ${v.bg}80`,
+                        }}
+                      >
+                        <Glyph className="w-5 h-5" />
                       </div>
                       <div className="min-w-0">
-                        <div className="font-bold text-sm flex items-center gap-2">
-                          <span className="truncate">{pageName}</span>
-                          <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-bold">{label} Page</span>
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="font-bold text-sm truncate max-w-[260px]" title={pageName}>
+                            {pageName}
+                          </span>
+                          <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-bold">
+                            {v.label} Page
+                          </span>
                         </div>
-                        <div className="text-xs text-[var(--color-text-muted)] font-mono">{pageId}</div>
+                        <div className="text-[11px] text-[var(--color-text-muted)] font-mono truncate">
+                          {pageId}
+                        </div>
                       </div>
                     </div>
-                    <span className="text-xs px-2 py-1 rounded-md bg-emerald-500/15 text-emerald-300 font-bold uppercase">Active</span>
+
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <span className="inline-flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-md bg-emerald-500/15 text-emerald-300 font-bold uppercase tracking-[0.08em] border border-emerald-500/25">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Active
+                      </span>
+                      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">
+                        Synced {timeAgo(lastSync)}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Ad Accounts under this Page */}
+                  {/* Ad Accounts under this Page — visually connected by a
+                      left-side gradient bar matching the platform colour */}
                   {linkedAdAccounts.length > 0 ? (
-                    <div className="ml-11 mt-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)]">
-                      <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-bold border-b border-[var(--color-border)]">
-                        {linkedAdAccounts.length} ad account{linkedAdAccounts.length === 1 ? "" : "s"} under this Page
-                      </div>
-                      <ul className="divide-y divide-[var(--color-border)]">
-                        {linkedAdAccounts.map((a) => (
-                          <li key={a.id as string} className="px-3 py-2.5 flex items-center justify-between text-sm">
-                            <div className="min-w-0">
-                              <div className="font-bold truncate">{(a.ad_account_name as string) || (a.platform_ad_account_id as string)}</div>
-                              <div className="text-xs text-[var(--color-text-muted)] font-mono">
-                                {a.platform_ad_account_id as string}
-                                {a.currency ? ` · ${a.currency as string}` : ""}
-                                {a.timezone_name ? ` · ${a.timezone_name as string}` : ""}
+                    <div className="relative pl-[27px] sm:pl-[31px] pr-4 sm:pr-5 pb-4">
+                      <div
+                        aria-hidden
+                        className="absolute left-[27px] sm:left-[31px] top-0 bottom-4 w-px"
+                        style={{
+                          background: v.isLight
+                            ? "linear-gradient(180deg, var(--color-border-bright), transparent)"
+                            : `linear-gradient(180deg, ${v.bg}80, transparent)`,
+                        }}
+                      />
+                      <div className="ml-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] overflow-hidden">
+                        <div className="px-3 py-2 text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-bold border-b border-[var(--color-border)] flex items-center justify-between">
+                          <span>{linkedAdAccounts.length} ad account{linkedAdAccounts.length === 1 ? "" : "s"} under this Page</span>
+                          <span className="text-[10px] font-mono normal-case tracking-normal">
+                            {linkedAdAccounts
+                              .map((a) => a.currency as string)
+                              .filter(Boolean)
+                              .filter((v, i, arr) => arr.indexOf(v) === i)
+                              .join(" · ") || ""}
+                          </span>
+                        </div>
+                        <ul className="divide-y divide-[var(--color-border)]">
+                          {linkedAdAccounts.map((a) => (
+                            <li
+                              key={a.id as string}
+                              className="px-3 py-2.5 flex items-center justify-between gap-3 text-sm"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold truncate">
+                                  {(a.ad_account_name as string) || (a.platform_ad_account_id as string)}
+                                </div>
+                                <div className="text-[11px] text-[var(--color-text-muted)] font-mono truncate">
+                                  {a.platform_ad_account_id as string}
+                                  {a.timezone_name ? ` · ${a.timezone_name as string}` : ""}
+                                </div>
                               </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
+                              {a.currency && (
+                                <span className="text-[10px] font-mono font-bold text-[var(--color-text-secondary)] px-1.5 py-0.5 rounded bg-white/5 flex-shrink-0">
+                                  {a.currency as string}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   ) : (p === "meta" || p === "meta_ads") ? (
-                    <div className="ml-11 mt-2 px-3 py-2 rounded-lg border border-[var(--color-orange)]/25 bg-[var(--color-orange-tint)] text-xs text-[var(--color-orange-300)]">
-                      No ad accounts surfaced yet — reconnect with the &quot;Manage ads&quot; permission ticked on the Meta consent screen.
+                    <div className="mx-4 sm:mx-5 mb-4 px-3 py-2.5 rounded-xl border border-[var(--color-orange)]/25 bg-[var(--color-orange-tint)] text-xs text-[var(--color-orange-300)]">
+                      No ad accounts surfaced yet — reconnect with the “Manage ads” permission ticked on the Meta consent screen.
                     </div>
                   ) : null}
                 </div>
               );
             })}
           </div>
-        </Card>
+        </section>
       )}
     </div>
   );
