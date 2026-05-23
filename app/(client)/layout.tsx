@@ -1,6 +1,6 @@
 import { requireMarketer } from "@/lib/auth/guards";
 import Link from "next/link";
-import { Sparkles, LayoutDashboard, Wallet, FileText, Bell, Settings, MessageCircle, Plug, LayoutTemplate } from "lucide-react";
+import { Sparkles, LayoutDashboard, Settings, Plug, LayoutTemplate } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { PlatformNavSection } from "./platform-nav";
 import { MobileSidebarToggle } from "@/components/client/mobile-sidebar";
@@ -69,10 +69,6 @@ export default async function ClientLayout({ children }: { children: React.React
           <div className="pt-4">
             <div className="px-3 text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-bold mb-2">Account</div>
             <ul className="space-y-1">
-              <li><NavItem href="/client/budget" icon={Wallet}>Budget</NavItem></li>
-              <li><NavItem href="/client/reports" icon={FileText}>Reports</NavItem></li>
-              <li><NavItem href="/client/notifications" icon={Bell}>Notifications</NavItem></li>
-              <li><NavItem href="/client/support" icon={MessageCircle}>Support</NavItem></li>
               <li><NavItem href="/client/settings" icon={Settings}>Settings</NavItem></li>
             </ul>
           </div>
