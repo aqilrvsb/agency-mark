@@ -1,6 +1,6 @@
 import { requireMarketer } from "@/lib/auth/guards";
 import Link from "next/link";
-import { Sparkles, LayoutDashboard, Settings, Plug, LayoutTemplate } from "lucide-react";
+import { Sparkles, LayoutDashboard, Settings, Plug } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { PlatformNavSection } from "./platform-nav";
 import { MobileSidebarToggle } from "@/components/client/mobile-sidebar";
@@ -26,7 +26,6 @@ export default async function ClientLayout({ children }: { children: React.React
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           <ul className="space-y-1">
             <li><NavItem href="/client/overview" icon={LayoutDashboard}>Overview</NavItem></li>
-            <li><NavItem href="/marketer/templates" icon={LayoutTemplate}>Templates</NavItem></li>
             <li><NavItem href="/client/connections" icon={Plug}>Connect Ads</NavItem></li>
           </ul>
 
@@ -37,31 +36,19 @@ export default async function ClientLayout({ children }: { children: React.React
                 platform="facebook"
                 label="Facebook Ads"
                 color="bg-blue-400"
-                items={[
-                  { href: "/client/facebook/campaigns", label: "Campaigns" },
-                  { href: "/client/facebook/adsets", label: "Ad Sets" },
-                  { href: "/client/facebook/ads", label: "Ads" },
-                ]}
+                items={[]}
               />
               <PlatformNavSection
                 platform="google"
                 label="Google Ads"
                 color="bg-amber-400"
-                items={[
-                  { href: "/client/google/campaigns", label: "Campaigns" },
-                  { href: "/client/google/adgroups", label: "Ad Groups" },
-                  { href: "/client/google/ads", label: "Ads" },
-                ]}
+                items={[]}
               />
               <PlatformNavSection
                 platform="tiktok"
                 label="TikTok Ads"
                 color="bg-pink-400"
-                items={[
-                  { href: "/client/tiktok/campaigns", label: "Campaigns" },
-                  { href: "/client/tiktok/adgroups", label: "Ad Groups" },
-                  { href: "/client/tiktok/ads", label: "Ads" },
-                ]}
+                items={[]}
               />
             </ul>
           </div>

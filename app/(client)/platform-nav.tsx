@@ -29,6 +29,18 @@ export function PlatformNavSection({
     if (isWithin) setOpen(true);
   }, [isWithin]);
 
+  // No sub-items → render as a static label row (no chevron, not clickable).
+  if (items.length === 0) {
+    return (
+      <li>
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-[var(--color-text-secondary)]">
+          <span className={`w-2 h-2 rounded-full ${color}`} />
+          {label}
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li>
       <button
